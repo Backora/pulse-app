@@ -1,64 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TextInput, 
-  KeyboardAvoidingView, 
-  Platform, 
-  TouchableWithoutFeedback, 
-  Keyboard 
+  View, Text, StyleSheet, TouchableOpacity, TextInput, 
+  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
+  Animated
 } from 'react-native';
 
 export default function LoginScreen() {
-  const [code, setCode] = useState('');
+  const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState('');
+  const [code, setCode] = useState('');
+  
+  // Ref para a animação de opacidade
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // A cor exata que o Alex pediu
   const ALEX_COLOR = '#C9C4C4';
 
-  const isReady = code.length === 6 && nickname.length > 2;
+  // Efeito para fazer Fade In sempre que o Step muda
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true, // Usa o processador gráfico (mais fluido)
+    }).start();
+  }, [step]);
+
+  const changeStep = (nextStep) => {
+    setStep(nextStep);
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
           style={styles.container}
         >
           <View style={styles.inner}>
-            
-            { }
             <Text style={[styles.logo, { color: ALEX_COLOR }]}>PULSE</Text>
-            
-            <View style={styles.form}>
-              <TextInput 
-                style={[styles.input, { color: ALEX_COLOR }]}
-                placeholder="CÓDIGO"
-                placeholderTextColor="#333"
-                value={code}
-                onChangeText={setCode}
-                autoCapitalize="characters"
-                maxLength={6}
-              />
-              
-              <TextInput 
-                style={[styles.input, { color: ALEX_COLOR }]}
-                placeholder="NICKNAME"
-                placeholderTextColor="#333"
-                value={nickname}
-                onChangeText={setNickname}
-                autoCapitalize="none"
-              />
-            </View>
 
-            <TouchableOpacity 
-              style={[styles.button, { borderColor: ALEX_COLOR, opacity: isReady ? 1 : 0.2 }]}
-              disabled={!isReady}
-            >
-              <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>
-            </TouchableOpacity>
+            <Animated.View style={[styles.contentArea, { opacity: fadeAnim }]}>
+              
+              {/* PASSO 1 */}
+              {step === 1 && (
+                <View>
+                  <TextInput 
+                    style={[styles.input, { color: ALEX_COLOR }]}
+                    placeholder="NICKNAME"
+                    placeholderTextColor="#333"
+                    value={nickname}
+                    onChangeText={setNickname}
+                    autoFocus
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity 
+                    style={[styles.button, { borderColor: ALEX_COLOR, opacity: nickname.length > 2 ? 1 : 0.2 }]}
+                    onPress={() => changeStep(2)}
+                    disabled={nickname.length <= 2}
+                  >
+                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>PRÓXIMO</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* PASSO 2 */}
+              {step === 2 && (
+                <View>
+                  <Text style={styles.welcomeText}>OLÁ, {nickname.toUpperCase()}</Text>
+                  <TouchableOpacity style={styles.card} onPress={() => console.log("Gerar")}>
+                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>GERAR PULSO</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.card} onPress={() => changeStep(3)}>
+                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>ENTRAR NUM PULSO</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeStep(1)}>
+                    <Text style={styles.backLink}>ALTERAR NOME</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* PASSO 3 */}
+              {step === 3 && (
+                <View>
+                  <TextInput 
+                    style={[styles.input, { color: ALEX_COLOR }]}
+                    placeholder="CÓDIGO"
+                    placeholderTextColor="#333"
+                    value={code}
+                    onChangeText={setCode}
+                    maxLength={6}
+                    autoFocus
+                  />
+                  <TouchableOpacity 
+                    style={[styles.button, { borderColor: ALEX_COLOR, opacity: code.length === 6 ? 1 : 0.2 }]}
+                    disabled={code.length !== 6}
+                  >
+                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeStep(2)}>
+                    <Text style={styles.backLink}>VOLTAR</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+            </Animated.View>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>BY BACKORA</Text>
@@ -71,45 +116,17 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1 },
   inner: { flex: 1, justifyContent: 'center', padding: 40 },
-  logo: { 
-    fontSize: 42, 
-    fontWeight: '900', 
-    letterSpacing: 12, 
-    textAlign: 'center', 
-    marginBottom: 60 
-  },
-  form: { gap: 15 },
-  input: { 
-    borderBottomWidth: 1,
-    borderBottomColor: '#1A1A1A',
-    fontSize: 14, 
-    letterSpacing: 3,
-    paddingVertical: 15,
-    textAlign: 'center'
-  },
-  button: { 
-    marginTop: 60,
-    paddingVertical: 15,
-    borderWidth: 1
-  },
-  buttonText: { 
-    textAlign: 'center', 
-    fontSize: 12, 
-    fontWeight: 'bold', 
-    letterSpacing: 2 
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: 'center'
-  },
-  footerText: {
-    color: '#222', 
-    fontSize: 8,
-    letterSpacing: 6
-  }
+  logo: { fontSize: 42, fontWeight: '900', letterSpacing: 12, textAlign: 'center', marginBottom: 60 },
+  contentArea: { width: '100%', minHeight: 280 },
+  input: { borderBottomWidth: 1, borderBottomColor: '#1A1A1A', fontSize: 14, letterSpacing: 3, paddingVertical: 15, textAlign: 'center' },
+  button: { marginTop: 30, paddingVertical: 15, borderWidth: 1 },
+  buttonText: { textAlign: 'center', fontSize: 12, fontWeight: 'bold', letterSpacing: 2 },
+  card: { paddingVertical: 25, borderWidth: 1, borderColor: '#1A1A1A', alignItems: 'center', marginVertical: 8 },
+  cardTitle: { fontSize: 12, fontWeight: 'bold', letterSpacing: 3 },
+  welcomeText: { color: '#333', fontSize: 10, textAlign: 'center', letterSpacing: 4, marginBottom: 20 },
+  backLink: { color: '#222', fontSize: 9, textAlign: 'center', marginTop: 25, letterSpacing: 2 },
+  footer: { position: 'absolute', bottom: 30, left: 0, right: 0, alignItems: 'center' },
+  footerText: { color: '#222', fontSize: 8, letterSpacing: 6 }
 });
