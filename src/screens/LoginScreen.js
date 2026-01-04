@@ -1,27 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, Text, StyleSheet, TouchableOpacity, TextInput, 
-  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  TouchableWithoutFeedback, 
+  Keyboard,
   Animated
 } from 'react-native';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState('');
   const [code, setCode] = useState('');
   
-  // Ref para a animação de opacidade
+  // Ref para a animação de opacidade (Fade In)
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const ALEX_COLOR = '#C9C4C4';
 
-  // Efeito para fazer Fade In sempre que o Step muda
+  // Efeito de Fade In sempre que mudamos de passo
   useEffect(() => {
     fadeAnim.setValue(0);
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
-      useNativeDriver: true, // Usa o processador gráfico (mais fluido)
+      useNativeDriver: true,
     }).start();
   }, [step]);
 
@@ -41,7 +48,7 @@ export default function LoginScreen() {
 
             <Animated.View style={[styles.contentArea, { opacity: fadeAnim }]}>
               
-              {/* PASSO 1 */}
+              {/* PASSO 1: NICKNAME */}
               {step === 1 && (
                 <View>
                   <TextInput 
@@ -63,37 +70,48 @@ export default function LoginScreen() {
                 </View>
               )}
 
-              {/* PASSO 2 */}
+              {/* PASSO 2: MENU PRINCIPAL */}
               {step === 2 && (
                 <View>
                   <Text style={styles.welcomeText}>OLÁ, {nickname.toUpperCase()}</Text>
-                  <TouchableOpacity style={styles.card} onPress={() => console.log("Gerar")}>
+                  
+                  <TouchableOpacity 
+                    style={styles.card} 
+                    onPress={() => console.log("Gerar Pulso")}
+                  >
                     <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>GERAR PULSO</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.card} onPress={() => changeStep(3)}>
+
+                  <TouchableOpacity 
+                    style={styles.card} 
+                    onPress={() => changeStep(3)}
+                  >
                     <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>ENTRAR NUM PULSO</Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity onPress={() => changeStep(1)}>
                     <Text style={styles.backLink}>ALTERAR NOME</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* PASSO 3 */}
+              {/* PASSO 3: CÓDIGO E CONEXÃO */}
               {step === 3 && (
                 <View>
                   <TextInput 
                     style={[styles.input, { color: ALEX_COLOR }]}
-                    placeholder="CÓDIGO"
+                    placeholder="CÓDIGO DE 6 DÍGITOS"
                     placeholderTextColor="#333"
                     value={code}
                     onChangeText={setCode}
                     maxLength={6}
                     autoFocus
+                    keyboardType="default"
                   />
                   <TouchableOpacity 
                     style={[styles.button, { borderColor: ALEX_COLOR, opacity: code.length === 6 ? 1 : 0.2 }]}
                     disabled={code.length !== 6}
+                    onPress={() => navigation.navigate('Chat')} // NAVEGA PARA O CHAT
                   >
                     <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>
                   </TouchableOpacity>
