@@ -1,39 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TextInput, 
-  KeyboardAvoidingView, 
-  Platform, 
-  TouchableWithoutFeedback, 
-  Keyboard,
-  Animated
+  View, Text, StyleSheet, TouchableOpacity, TextInput, 
+  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, 
+  Keyboard, Animated, Alert, ActivityIndicator 
 } from 'react-native';
+import { supabase } from '../supabase'; 
 
 export default function LoginScreen({ navigation }) {
   const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState('');
   const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
   
-  // Ref para a animação de opacidade (Fade In)
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
   const ALEX_COLOR = '#C9C4C4';
 
-  // Efeito de Fade In sempre que mudamos de passo
+  // Animação de Fade In entre passos
   useEffect(() => {
     fadeAnim.setValue(0);
     Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
+      toValue: 1, duration: 400, useNativeDriver: true,
     }).start();
   }, [step]);
 
-  const changeStep = (nextStep) => {
-    setStep(nextStep);
+  // FUNÇÃO: ENTRAR NUM PULSO EXISTENTE (VALIDA NA TABELA PULSES)
+  const handleConnect = async () => {
+    if (code.length !== 6) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('pulses')
+        .select('*')
+        .eq('pulse_code', code.toUpperCase())
+        .single();
+
+      if (error || !data) {
+        Alert.alert("Erro", "Este Pulse é inválido ou já expirou.");
+      } else {
+        // Sucesso! Leva o utilizador direto para o Chat
+        navigation.navigate('Chat', { nickname, pulseCode: data.pulse_code });
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Falha na conexão com o servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,74 +61,64 @@ export default function LoginScreen({ navigation }) {
 
             <Animated.View style={[styles.contentArea, { opacity: fadeAnim }]}>
               
-              {/* PASSO 1: NICKNAME */}
+              {/* PASSO 1: DEFINIR NICKNAME */}
               {step === 1 && (
                 <View>
                   <TextInput 
                     style={[styles.input, { color: ALEX_COLOR }]}
-                    placeholder="NICKNAME"
-                    placeholderTextColor="#333"
-                    value={nickname}
-                    onChangeText={setNickname}
-                    autoFocus
-                    autoCapitalize="none"
+                    placeholder="NICKNAME" placeholderTextColor="#333"
+                    value={nickname} onChangeText={setNickname}
+                    autoFocus autoCapitalize="none"
                   />
                   <TouchableOpacity 
                     style={[styles.button, { borderColor: ALEX_COLOR, opacity: nickname.length > 2 ? 1 : 0.2 }]}
-                    onPress={() => changeStep(2)}
-                    disabled={nickname.length <= 2}
+                    onPress={() => setStep(2)} disabled={nickname.length <= 2}
                   >
                     <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>PRÓXIMO</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* PASSO 2: MENU PRINCIPAL */}
+              {/* PASSO 2: ESCOLHER AÇÃO */}
               {step === 2 && (
                 <View>
                   <Text style={styles.welcomeText}>OLÁ, {nickname.toUpperCase()}</Text>
                   
+                  {/* Navega para a ConfigPage que criámos */}
                   <TouchableOpacity 
                     style={styles.card} 
-                    onPress={() => console.log("Gerar Pulso")}
+                    onPress={() => navigation.navigate('Config', { nickname })}
                   >
-                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>GERAR PULSO</Text>
+                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>CRIAR NOVO PULSE</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={styles.card} 
-                    onPress={() => changeStep(3)}
-                  >
+                  <TouchableOpacity style={styles.card} onPress={() => setStep(3)}>
                     <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>ENTRAR NUM PULSO</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => changeStep(1)}>
+                  <TouchableOpacity onPress={() => setStep(1)}>
                     <Text style={styles.backLink}>ALTERAR NOME</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* PASSO 3: CÓDIGO E CONEXÃO */}
+              {/* PASSO 3: INSERIR CÓDIGO DE ACESSO */}
               {step === 3 && (
                 <View>
                   <TextInput 
                     style={[styles.input, { color: ALEX_COLOR }]}
-                    placeholder="CÓDIGO DE 6 DÍGITOS"
-                    placeholderTextColor="#333"
-                    value={code}
-                    onChangeText={setCode}
-                    maxLength={6}
-                    autoFocus
-                    keyboardType="default"
+                    placeholder="6-DIGIT CODE" placeholderTextColor="#333"
+                    value={code} onChangeText={setCode}
+                    maxLength={6} autoFocus autoCapitalize="characters"
                   />
                   <TouchableOpacity 
                     style={[styles.button, { borderColor: ALEX_COLOR, opacity: code.length === 6 ? 1 : 0.2 }]}
-                    disabled={code.length !== 6}
-                    onPress={() => navigation.navigate('Chat')} // NAVEGA PARA O CHAT
+                    onPress={handleConnect} disabled={code.length !== 6 || loading}
                   >
-                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>
+                    {loading ? <ActivityIndicator color={ALEX_COLOR} /> :
+                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>}
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => changeStep(2)}>
+                  <TouchableOpacity onPress={() => setStep(2)}>
                     <Text style={styles.backLink}>VOLTAR</Text>
                   </TouchableOpacity>
                 </View>
