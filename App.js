@@ -5,32 +5,39 @@ import { StatusBar } from 'react-native';
 
 // Importa as tuas telas
 import LoginScreen from './src/screens/LoginScreen';
+import MenuScreen from './src/screens/MenuScreen'; 
 import ConfigPage from './src/screens/ConfigPage';
 import ChatScreen from './src/screens/ChatScreen'; 
+import SessionsScreen from './src/screens/SessionsScreen'; // 1. ADICIONADO O IMPORT
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      {/* StatusBar preta para combinar com o design Blackora */}
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <Stack.Navigator 
         initialRouteName="Login"
         screenOptions={{
-          headerShown: false,           // Remove a barra de topo padrão
-          animationEnabled: true,       // Mantém as transições suaves
-          cardStyle: { backgroundColor: '#000' } // Garante fundo preto em tudo
+          headerShown: false,
+          animationEnabled: true,
+          cardStyle: { backgroundColor: '#000' }
         }}
       >
-        {/* Tela 1: Nickname e Escolha Inicial */}
+        {/* Tela 1: Apenas Nickname */}
         <Stack.Screen name="Login" component={LoginScreen} />
 
-        {/* Tela 2: Configurações de Duração (Presets 1h, 24h, 7d) */}
+        {/* Tela 2: Onde escolhe Criar ou Entrar */}
+        <Stack.Screen name="Menu" component={MenuScreen} />
+
+        {/* Tela 3: Configurações de Duração */}
         <Stack.Screen name="Config" component={ConfigPage} />
 
-        {/* Tela 3: Onde a conversa acontece */}
+        {/* Tela 4: Lista de Sessões (A que estava a faltar) */}
+        <Stack.Screen name="Sessions" component={SessionsScreen} /> 
+
+        {/* Tela 5: Onde a conversa acontece */}
         <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>

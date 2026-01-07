@@ -1,49 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
-  View, Text, StyleSheet, TouchableOpacity, TextInput, 
-  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, 
-  Keyboard, Animated, Alert, ActivityIndicator 
+  View, Text, StyleSheet, TextInput, TouchableOpacity, 
+  KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback,
+  ActivityIndicator, Alert 
 } from 'react-native';
-import { supabase } from '../supabase'; 
+import { supabase } from '../supabase';
 
 export default function LoginScreen({ navigation }) {
-  const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState('');
-  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
   const ALEX_COLOR = '#C9C4C4';
 
-  // Animação de Fade In entre passos
-  useEffect(() => {
-    fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, {
-      toValue: 1, duration: 400, useNativeDriver: true,
-    }).start();
-  }, [step]);
+  const handleAccess = async () => {
+    if (nickname.length <= 2) return;
 
-  // FUNÇÃO: ENTRAR NUM PULSO EXISTENTE (VALIDA NA TABELA PULSES)
-  const handleConnect = async () => {
-    if (code.length !== 6) return;
-    
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('pulses')
-        .select('*')
-        .eq('pulse_code', code.toUpperCase())
-        .single();
+      // AJUSTE: Enviando os 3 parâmetros que a função do Alex exige
+      const { error } = await supabase.rpc('register_user', {
+        p_username: nickname, 
+        p_avatar_url: '' 
+      });
 
-      if (error || !data) {
-        Alert.alert("Erro", "Este Pulse é inválido ou já expirou.");
-      } else {
-        // Sucesso! Leva o utilizador direto para o Chat
-        navigation.navigate('Chat', { nickname, pulseCode: data.pulse_code });
-      }
+      if (error) throw error;
+
+      navigation.navigate('Menu', { nickname });
+      
     } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Falha na conexão com o servidor.");
+      console.error("Erro no acesso:", error);
+      Alert.alert("SIGNAL_LOST", "Erro ao sincronizar identificação. Verifica os parâmetros com o Alex.");
     } finally {
       setLoading(false);
     }
@@ -51,85 +36,51 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <View style={styles.container}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-          style={styles.container}
+          style={styles.inner}
         >
-          <View style={styles.inner}>
-            <Text style={[styles.logo, { color: ALEX_COLOR }]}>PULSE</Text>
-
-            <Animated.View style={[styles.contentArea, { opacity: fadeAnim }]}>
-              
-              {/* PASSO 1: DEFINIR NICKNAME */}
-              {step === 1 && (
-                <View>
-                  <TextInput 
-                    style={[styles.input, { color: ALEX_COLOR }]}
-                    placeholder="NICKNAME" placeholderTextColor="#333"
-                    value={nickname} onChangeText={setNickname}
-                    autoFocus autoCapitalize="none"
-                  />
-                  <TouchableOpacity 
-                    style={[styles.button, { borderColor: ALEX_COLOR, opacity: nickname.length > 2 ? 1 : 0.2 }]}
-                    onPress={() => setStep(2)} disabled={nickname.length <= 2}
-                  >
-                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>PRÓXIMO</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* PASSO 2: ESCOLHER AÇÃO */}
-              {step === 2 && (
-                <View>
-                  <Text style={styles.welcomeText}>OLÁ, {nickname.toUpperCase()}</Text>
-                  
-                  {/* Navega para a ConfigPage que criámos */}
-                  <TouchableOpacity 
-                    style={styles.card} 
-                    onPress={() => navigation.navigate('Config', { nickname })}
-                  >
-                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>CRIAR NOVO PULSE</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.card} onPress={() => setStep(3)}>
-                    <Text style={[styles.cardTitle, { color: ALEX_COLOR }]}>ENTRAR NUM PULSO</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setStep(1)}>
-                    <Text style={styles.backLink}>ALTERAR NOME</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* PASSO 3: INSERIR CÓDIGO DE ACESSO */}
-              {step === 3 && (
-                <View>
-                  <TextInput 
-                    style={[styles.input, { color: ALEX_COLOR }]}
-                    placeholder="6-DIGIT CODE" placeholderTextColor="#333"
-                    value={code} onChangeText={setCode}
-                    maxLength={6} autoFocus autoCapitalize="characters"
-                  />
-                  <TouchableOpacity 
-                    style={[styles.button, { borderColor: ALEX_COLOR, opacity: code.length === 6 ? 1 : 0.2 }]}
-                    onPress={handleConnect} disabled={code.length !== 6 || loading}
-                  >
-                    {loading ? <ActivityIndicator color={ALEX_COLOR} /> :
-                    <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>CONECTAR</Text>}
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setStep(2)}>
-                    <Text style={styles.backLink}>VOLTAR</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-            </Animated.View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>BY BACKORA</Text>
-            </View>
+          
+          {/* LOGO AREA */}
+          <View style={styles.logoWrapper}>
+            <Text style={[styles.logo, { color: ALEX_COLOR }]}>P U L S E</Text>
+            <Text style={styles.subLogo}>ENCRYPTED COMMUNICATION</Text> 
           </View>
+
+          {/* INPUT AREA */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              style={[styles.input, { color: ALEX_COLOR }]}
+              placeholder="IDENTIFY YOURSELF"
+              placeholderTextColor="#444"
+              value={nickname}
+              onChangeText={setNickname}
+              autoCapitalize="none"
+              autoCorrect={false}
+              selectionColor={ALEX_COLOR}
+              cursorColor={ALEX_COLOR}
+              editable={!loading}
+            />
+            
+            <TouchableOpacity 
+              style={[styles.button, { opacity: nickname.length > 2 && !loading ? 1 : 0 }]}
+              onPress={handleAccess}
+              disabled={nickname.length <= 2 || loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={ALEX_COLOR} />
+              ) : (
+                <Text style={[styles.buttonText, { color: ALEX_COLOR }]}>ACCESS</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* FOOTER */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>BY BACKORA</Text>
+          </View>
+
         </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
@@ -137,17 +88,70 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  inner: { flex: 1, justifyContent: 'center', padding: 40 },
-  logo: { fontSize: 42, fontWeight: '900', letterSpacing: 12, textAlign: 'center', marginBottom: 60 },
-  contentArea: { width: '100%', minHeight: 280 },
-  input: { borderBottomWidth: 1, borderBottomColor: '#1A1A1A', fontSize: 14, letterSpacing: 3, paddingVertical: 15, textAlign: 'center' },
-  button: { marginTop: 30, paddingVertical: 15, borderWidth: 1 },
-  buttonText: { textAlign: 'center', fontSize: 12, fontWeight: 'bold', letterSpacing: 2 },
-  card: { paddingVertical: 25, borderWidth: 1, borderColor: '#1A1A1A', alignItems: 'center', marginVertical: 8 },
-  cardTitle: { fontSize: 12, fontWeight: 'bold', letterSpacing: 3 },
-  welcomeText: { color: '#333', fontSize: 10, textAlign: 'center', letterSpacing: 4, marginBottom: 20 },
-  backLink: { color: '#222', fontSize: 9, textAlign: 'center', marginTop: 25, letterSpacing: 2 },
-  footer: { position: 'absolute', bottom: 30, left: 0, right: 0, alignItems: 'center' },
-  footerText: { color: '#222', fontSize: 8, letterSpacing: 6 }
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
+  inner: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 40 
+  },
+  logoWrapper: { 
+    alignItems: 'center', 
+    marginBottom: 80 
+  },
+  logo: { 
+    fontSize: 22, 
+    fontWeight: '100', 
+    letterSpacing: 20, 
+    textAlign: 'center',
+    paddingLeft: 20, 
+  },
+  subLogo: {
+    color: '#555',
+    fontSize: 7,
+    letterSpacing: 6,
+    textAlign: 'center',
+    marginTop: 15,
+    fontWeight: '400'
+  },
+  inputContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  input: { 
+    width: '80%', 
+    fontSize: 12, 
+    letterSpacing: 5, 
+    paddingVertical: 15, 
+    textAlign: 'center', 
+    fontWeight: '300',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#222'
+  },
+  button: { 
+    marginTop: 50, 
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    minHeight: 40,
+    justifyContent: 'center'
+  },
+  buttonText: { 
+    fontSize: 10, 
+    letterSpacing: 8, 
+    fontWeight: '300' 
+  },
+  footer: { 
+    position: 'absolute', 
+    bottom: 40, 
+    alignSelf: 'center' 
+  },
+  footerText: { 
+    color: '#444', 
+    fontSize: 8, 
+    letterSpacing: 10, 
+    fontWeight: '300' 
+  }
 });
