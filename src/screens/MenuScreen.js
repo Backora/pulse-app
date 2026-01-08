@@ -31,7 +31,6 @@ export default function MenuScreen({ route, navigation }) {
               navigation.replace('Login');
             } catch (error) {
               console.error("Erro ao desconectar:", error);
-              // Mesmo se falhar, forçamos a volta para o login para segurança do user
               navigation.replace('Login');
             } finally {
               setLoading(false);
@@ -56,6 +55,7 @@ export default function MenuScreen({ route, navigation }) {
         <View style={styles.menuWrapper}>
           <View style={styles.menuRow}>
             
+            {/* CRIAR: Vai para a tela de Configuração */}
             <TouchableOpacity 
               style={styles.menuOption} 
               onPress={() => navigation.navigate('Config', { nickname })}
@@ -66,9 +66,10 @@ export default function MenuScreen({ route, navigation }) {
 
             <View style={styles.verticalDivider} />
 
+            {/* JOIN: CORRIGIDO para ir para 'Join' em vez de 'Sessions' */}
             <TouchableOpacity 
               style={styles.menuOption}
-              onPress={() => navigation.navigate('Sessions', { nickname })}
+              onPress={() => navigation.navigate('Join', { nickname })}
             >
               <Text style={[styles.menuTitle, { color: ALEX_COLOR }]}>JOIN</Text>
               <Text style={styles.menuDesc}>Intercept</Text>

@@ -5,15 +5,19 @@ import {
   Alert, ActivityIndicator 
 } from 'react-native';
 import { supabase } from '../supabase';
+import EntryRitual from '../components/EntryRitual'; // Importação do Ritual
 
 export default function ChatScreen({ route, navigation }) {
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
   const pulseCode = params.pulseCode || '---';
+  const isNew = params.isNew || false; // Recebe o aviso da ConfigPage
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRitual, setShowRitual] = useState(isNew); // Controla a exibição do ritual
+  
   const ALEX_COLOR = '#C9C4C4';
   const flatListRef = useRef();
 
@@ -52,7 +56,6 @@ export default function ChatScreen({ route, navigation }) {
     if (!error) setNewMessage('');
   };
 
-  // MUDANÇA AQUI: Agora volta para 'Sessions' em vez de 'Login'
   const handleDeletePulse = async () => {
     Alert.alert("CONFIRMAR DESTRUIÇÃO", "Eliminar rastro permanentemente?", [
       { text: "CANCEL", style: "cancel" },
@@ -60,11 +63,9 @@ export default function ChatScreen({ route, navigation }) {
         setLoading(true);
         try {
           await supabase.rpc('delete_pulse', { p_pulse_code: pulseCode });
-          // MUDADO: Navega de volta para a lista de chats/sessões
           navigation.navigate('Sessions', { nickname });
         } catch (e) {
           console.error(e);
-          // Mesmo se der erro no delete, voltamos para as sessões para não travar
           navigation.navigate('Sessions', { nickname });
         } finally {
           setLoading(false);
@@ -75,8 +76,8 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
-        {/* Ícone de voltar também leva para Sessions */}
         <TouchableOpacity onPress={() => navigation.navigate('Sessions', { nickname })}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
@@ -91,6 +92,7 @@ export default function ChatScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* CHAT LIST */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -110,6 +112,7 @@ export default function ChatScreen({ route, navigation }) {
         contentContainerStyle={styles.chatList}
       />
 
+      {/* INPUT AREA */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={20}>
         <View style={styles.inputArea}>
           <TextInput
@@ -125,6 +128,11 @@ export default function ChatScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* RITUAL OVERLAY: Só renderiza se for um novo Pulse */}
+      {showRitual && (
+        <EntryRitual onFinish={() => setShowRitual(false)} />
+      )}
     </View>
   );
 }
