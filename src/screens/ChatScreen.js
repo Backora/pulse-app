@@ -5,18 +5,21 @@ import {
   Alert, ActivityIndicator 
 } from 'react-native';
 import { supabase } from '../supabase';
-import EntryRitual from '../components/EntryRitual'; // Importação do Ritual
+import EntryRitual from '../components/EntryRitual';
 
 export default function ChatScreen({ route, navigation }) {
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
   const pulseCode = params.pulseCode || '---';
-  const isNew = params.isNew || false; // Recebe o aviso da ConfigPage
+  const isNew = params.isNew || false;
+  
+  // 1. EXTRAIR O isAdmin QUE VEM DA JOIN OU CONFIG
+  const isAdmin = params.isAdmin || false; 
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showRitual, setShowRitual] = useState(isNew); // Controla a exibição do ritual
+  const [showRitual, setShowRitual] = useState(isNew);
   
   const ALEX_COLOR = '#C9C4C4';
   const flatListRef = useRef();
@@ -57,6 +60,12 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   const handleDeletePulse = async () => {
+    // 2. TRAVA DE SEGURANÇA LÓGICA
+    if (!isAdmin) {
+      Alert.alert("ACCESS_DENIED", "Apenas o Host pode destruir este sinal.");
+      return;
+    }
+
     Alert.alert("CONFIRMAR DESTRUIÇÃO", "Eliminar rastro permanentemente?", [
       { text: "CANCEL", style: "cancel" },
       { text: "KILL", style: "destructive", onPress: async () => {
@@ -87,9 +96,20 @@ export default function ChatScreen({ route, navigation }) {
           <Text style={styles.headerSubtitle}>ENCRYPTED_PULSE</Text>
         </View>
 
-        <TouchableOpacity onPress={handleDeletePulse} disabled={loading}>
-          {loading ? <ActivityIndicator size="small" color="#600" /> : <Text style={styles.killBtn}>KILL</Text>}
-        </TouchableOpacity>
+        {/* 3. TRAVA VISUAL: SÓ MOSTRA O BOTÃO SE FOR ADMIN */}
+        <View style={{ width: 40, alignItems: 'flex-end' }}>
+          {isAdmin ? (
+            <TouchableOpacity onPress={handleDeletePulse} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#600" />
+              ) : (
+                <Text style={styles.killBtn}>KILL</Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.lockedDot} /> 
+          )}
+        </View>
       </View>
 
       {/* CHAT LIST */}
@@ -129,7 +149,6 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </KeyboardAvoidingView>
 
-      {/* RITUAL OVERLAY: Só renderiza se for um novo Pulse */}
       {showRitual && (
         <EntryRitual onFinish={() => setShowRitual(false)} />
       )}
@@ -144,11 +163,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     borderBottomWidth: 0.5, borderBottomColor: '#1A1A1A'
   },
-  headerInfo: { alignItems: 'center' },
+  headerInfo: { alignItems: 'center', flex: 1 },
   headerTitle: { fontSize: 12, letterSpacing: 6, fontWeight: '200' },
   headerSubtitle: { color: '#666', fontSize: 7, letterSpacing: 3, marginTop: 4 },
-  backIcon: { color: '#666', fontSize: 18 },
+  backIcon: { color: '#666', fontSize: 18, width: 40 },
   killBtn: { color: '#800', fontSize: 9, letterSpacing: 2, fontWeight: '400' },
+  lockedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#1A1A1A' },
   chatList: { paddingHorizontal: 30, paddingVertical: 20 },
   msgContainer: { marginBottom: 30, maxWidth: '90%' },
   myMsg: { 

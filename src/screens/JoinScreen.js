@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, 
   TouchableOpacity, ActivityIndicator, Alert, 
-  Keyboard, TouchableWithoutFeedback // 1. IMPORTA ESTES DOIS
+  Keyboard, TouchableWithoutFeedback 
 } from 'react-native';
 import { supabase } from '../supabase';
 
@@ -26,33 +26,74 @@ export default function JoinScreen({ route, navigation }) {
       Alert.alert("INVALID_FORMAT", "O código deve seguir o padrão XX-XX-XX");
       return;
     }
+
     setLoading(true);
-    Keyboard.dismiss(); // 2. GARANTE QUE FECHA AO CLICAR NO BOTÃO
+    Keyboard.dismiss();
 
     try {
-      const { data, error } = await supabase
+      // 1. VERIFICAÇÃO DE SEGURANÇA: O sinal existe? Quem é o dono?
+      const { data: pulse, error: pulseError } = await supabase
         .from('pulses')
-        .select('*')
+        .select('p_creator_id')
         .eq('pulse_code', pulseCode)
         .single();
 
-      if (error || !data) {
+      if (pulseError || !pulse) {
         Alert.alert("SIGNAL_LOST", "Sinal não encontrado ou expirado.");
-      } else {
-        navigation.navigate('Chat', { nickname, pulseCode: data.pulse_code, isNew: false });
+        setLoading(false);
+        return;
       }
+
+      // 2. REGRA 1: Bloquear se for o próprio Host
+      if (pulse.p_creator_id.toLowerCase() === nickname.toLowerCase()) {
+        Alert.alert("ACCESS_DENIED", "Já és o HOST deste sinal. Usa a lista de sessões.");
+        setLoading(false);
+        return;
+      }
+
+      // 3. REGRA 2: Bloquear se já for participante (Joiner)
+      const { data: alreadyJoined } = await supabase
+        .from('pulse_participants')
+        .select('*')
+        .eq('pulse_code', pulseCode)
+        .eq('user_id', nickname)
+        .single();
+
+      if (alreadyJoined) {
+        Alert.alert("ALREADY_CONNECTED", "Já tens uma ligação ativa a este sinal.");
+        setLoading(false);
+        return;
+      }
+
+      // 4. Se passar nas regras, executa a função de Join do Alex
+      const { error: rpcError } = await supabase.rpc('send_join_pulse', { 
+        p_user_id: nickname,   
+        p_pulse_code: pulseCode 
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Sucesso: Vai para o chat
+      navigation.navigate('Chat', { 
+        nickname, 
+        pulseCode: pulseCode, 
+        isAdmin: false, 
+        isNew: false 
+      });
+
     } catch (err) {
-      Alert.alert("ERROR", "Falha na sincronização.");
+      console.log("JOIN_ERROR:", err.message);
+      Alert.alert("SYSTEM_FAILURE", "Erro crítico na sincronização de sinal.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    // 3. ENVOLVE TUDO COM O TOUCHABLE PARA SAIR DO TECLADO
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
         <View style={styles.inner}>
+          
           <View style={styles.headerBox}>
             <Text style={styles.operatorLabel}>ID // {nickname.toUpperCase()}</Text>
             <View style={[styles.statusLine, { backgroundColor: ALEX_COLOR }]} />
@@ -60,6 +101,7 @@ export default function JoinScreen({ route, navigation }) {
 
           <View style={styles.centerWrapper}>
             <Text style={styles.inputLabel}>ENTER_HEX_SIGNAL</Text>
+            
             <TextInput
               style={[styles.input, { color: ALEX_COLOR }]}
               placeholder="XX-XX-XX"
@@ -68,8 +110,8 @@ export default function JoinScreen({ route, navigation }) {
               onChangeText={handleTextChange}
               autoCapitalize="characters"
               autoCorrect={false}
-              returnKeyType="done" // 4. MUDA O BOTÃO DO TECLADO PARA "DONE"
-              onSubmitEditing={handleJoin} // 5. PERMITE ENTRAR LOGO PELO TECLADO
+              returnKeyType="done"
+              onSubmitEditing={handleJoin}
             />
 
             <TouchableOpacity 
@@ -98,7 +140,6 @@ export default function JoinScreen({ route, navigation }) {
   );
 }
 
-// ... os teus estilos continuam iguais ...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   inner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
