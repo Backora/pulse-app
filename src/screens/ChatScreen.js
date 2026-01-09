@@ -13,21 +13,14 @@ export default function ChatScreen({ route, navigation }) {
   const nickname = params.nickname || 'OPERATOR';
   const pulseCode = params.pulseCode || '---';
   const isNew = params.isNew || false;
-<<<<<<< Updated upstream
   
   // 1. EXTRAIR O isAdmin QUE VEM DA JOIN OU CONFIG
   const isAdmin = params.isAdmin || false; 
-=======
->>>>>>> Stashed changes
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
-<<<<<<< Updated upstream
   const [showRitual, setShowRitual] = useState(isNew);
-=======
-  const [showRitual, setShowRitual] = useState(isNew); 
->>>>>>> Stashed changes
   
   const ALEX_COLOR = '#C9C4C4';
   const flatListRef = useRef();
@@ -187,11 +180,7 @@ const styles = StyleSheet.create({
   headerInfo: { alignItems: 'center', flex: 1 },
   headerTitle: { fontSize: 12, letterSpacing: 6, fontWeight: '200' },
   headerSubtitle: { color: '#666', fontSize: 7, letterSpacing: 3, marginTop: 4 },
-<<<<<<< Updated upstream
   backIcon: { color: '#666', fontSize: 18, width: 40 },
-=======
-  backIcon: { color: '#666', fontSize: 20, paddingRight: 10 },
->>>>>>> Stashed changes
   killBtn: { color: '#800', fontSize: 9, letterSpacing: 2, fontWeight: '400' },
   lockedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#1A1A1A' },
   chatList: { paddingHorizontal: 30, paddingVertical: 20 },

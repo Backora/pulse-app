@@ -56,7 +56,6 @@ export default function ConfigPage({ route, navigation }) {
 
       if (error) throw error;
 
-<<<<<<< Updated upstream
       // 4. SUCESSO -> CHAT
       navigation.navigate('Chat', { 
         nickname, 
@@ -65,16 +64,6 @@ export default function ConfigPage({ route, navigation }) {
         isNew: true 
       });
 
-=======
-      if (data && data[0]) {
-        const pulse = data[0];
-        navigation.navigate('Chat', { 
-          nickname, 
-          pulseCode: pulse.pulse_code,
-          isNew: true 
-        });
-      }
->>>>>>> Stashed changes
     } catch (error) {
       console.error("ERRO_AO_CRIAR:", error.message);
       Alert.alert("SYSTEM_FAILURE", "Erro ao gravar no banco: " + error.message);
@@ -158,36 +147,10 @@ const styles = StyleSheet.create({
   optionBtn: { padding: 10, alignItems: 'center' },
   optionText: { fontSize: 18, letterSpacing: 8, fontWeight: '100' },
   activeBar: { width: 20, height: 1, marginTop: 8 },
-<<<<<<< Updated upstream
   generateBtn: { marginTop: 100, borderWidth: 0.5, borderColor: '#222', paddingVertical: 15, paddingHorizontal: 30, alignItems: 'center' },
-=======
-
-  generateBtn: { 
-    marginTop: 100,
-    // 2. Borda Ultra-fina (0.5px) para look HD
-    borderWidth: 0.5, 
-    borderColor: '#222', 
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    alignItems: 'center',
-    // 3. Remove elevação/sombra cinza nativa do Android
-    ...Platform.select({
-      android: { elevation: 0 },
-      ios: { shadowOpacity: 0 }
-    })
-  },
->>>>>>> Stashed changes
   generateText: { fontSize: 9, letterSpacing: 6, fontWeight: '300' },
   backBtn: { marginTop: 80 },
   backText: { color: '#333', fontSize: 8, letterSpacing: 4 },
-<<<<<<< Updated upstream
   footer: { position: 'absolute', bottom: 40 },
-=======
-  
-  footer: { 
-    position: 'absolute', 
-    bottom: Platform.OS === 'android' ? 20 : 40 
-  },
->>>>>>> Stashed changes
   footerText: { color: '#222', fontSize: 8, letterSpacing: 10, fontWeight: '300' }
 });
