@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  ActivityIndicator, Dimensions, Pressable, Animated 
+  ActivityIndicator, Dimensions, Pressable, Platform, Animated 
 } from 'react-native';
 // 1. SafeAreaView para gerenciar Notch e barras de navegação
 import { SafeAreaView } from 'react-native-safe-area-context';

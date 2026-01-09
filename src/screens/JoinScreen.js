@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, 
   TouchableOpacity, ActivityIndicator, Alert, 
-  Keyboard, TouchableWithoutFeedback 
+  Keyboard, Platform, TouchableWithoutFeedback 
 } from 'react-native';
 // 1. SafeAreaView para gerenciar o topo e base no Android/iOS
 import { SafeAreaView } from 'react-native-safe-area-context';
