@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-<<<<<<< Updated upstream
   ActivityIndicator, Dimensions, Pressable, Animated 
-=======
-  ActivityIndicator, Alert, Dimensions, Pressable, Animated, Platform 
->>>>>>> Stashed changes
 } from 'react-native';
 // 1. SafeAreaView para gerenciar Notch e barras de navegação
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,7 +43,6 @@ const PulseCard = ({ item, nickname, navigation }) => {
   return (
     <TouchableOpacity 
       style={styles.card}
-<<<<<<< Updated upstream
       onPress={() => {
         // SEGURANÇA: Garante que entras como Admin se o pulso for teu
         navigation.navigate('Chat', { 
@@ -56,10 +51,6 @@ const PulseCard = ({ item, nickname, navigation }) => {
           isAdmin: isOwner 
         });
       }}
-=======
-      onPress={() => navigation.navigate('Chat', { nickname, pulseCode: item.pulse_code })}
-      activeOpacity={0.8}
->>>>>>> Stashed changes
     >
       <Text style={styles.cardCode}>{item.pulse_code}</Text>
       <Text style={[styles.cardHost, { color: isOwner ? ALEX_COLOR : '#444' }]}>
@@ -144,49 +135,6 @@ export default function SessionsScreen({ route, navigation }) {
     }
   };
 
-<<<<<<< Updated upstream
-=======
-  const handlePressIn = () => {
-    let duration = 3000;
-    let elapsed = 0;
-    let currentInterval = 400;
-
-    const runHaptic = () => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      elapsed += currentInterval;
-      currentInterval = Math.max(50, 400 - (elapsed / duration) * 350);
-      if (elapsed < duration) {
-        hapticTimer.current = setTimeout(runHaptic, currentInterval);
-      }
-    };
-
-    runHaptic();
-
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: duration,
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (finished) handlePanicAction();
-    });
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 1.5, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -1.5, duration: 50, useNativeDriver: true }),
-      ])
-    ).start();
-  };
-
-  const handlePressOut = () => {
-    if (hapticTimer.current) clearTimeout(hapticTimer.current);
-    Animated.timing(progressAnim).stop();
-    Animated.timing(shakeAnim).stop();
-    progressAnim.setValue(0);
-    shakeAnim.setValue(0);
-  };
-
->>>>>>> Stashed changes
   const barWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
@@ -201,11 +149,7 @@ export default function SessionsScreen({ route, navigation }) {
       </View>
 
       {loading ? (
-<<<<<<< Updated upstream
         <ActivityIndicator style={{ flex: 1 }} color={ALEX_COLOR} />
-=======
-        <ActivityIndicator style={{ flex: 1 }} color="#222" />
->>>>>>> Stashed changes
       ) : (
         <FlatList
           data={sessions}
@@ -280,18 +224,8 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', alignItems: 'center' },
   cardTime: { color: '#555', fontSize: 9, letterSpacing: 1, marginRight: 6 },
   statusDot: { width: 3, height: 3, borderRadius: 1.5 },
-<<<<<<< Updated upstream
   footer: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
   newBtn: { marginBottom: 15 },
-=======
-  footer: { 
-    position: 'absolute', 
-    bottom: Platform.OS === 'android' ? 20 : 40, 
-    width: '100%', 
-    alignItems: 'center' 
-  },
-  newBtn: { marginBottom: 25 },
->>>>>>> Stashed changes
   newBtnText: { fontSize: 9, letterSpacing: 3 },
   joinBtn: { marginBottom: 25 },
   joinBtnText: { color: '#444', fontSize: 8, letterSpacing: 3 },

@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, 
   TouchableOpacity, ActivityIndicator, Alert, 
-<<<<<<< Updated upstream
   Keyboard, TouchableWithoutFeedback 
-=======
-  Keyboard, TouchableWithoutFeedback, Platform 
->>>>>>> Stashed changes
 } from 'react-native';
 // 1. SafeAreaView para gerenciar o topo e base no Android/iOS
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -118,10 +114,6 @@ export default function JoinScreen({ route, navigation }) {
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleJoin}
-<<<<<<< Updated upstream
-=======
-              underlineColorAndroid="transparent" // Remove linha nativa do Android
->>>>>>> Stashed changes
             />
 
             <TouchableOpacity 
