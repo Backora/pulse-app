@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
+<<<<<<< Updated upstream
   ActivityIndicator, Dimensions, Pressable, Animated 
+=======
+  ActivityIndicator, Alert, Dimensions, Pressable, Animated, Platform 
+>>>>>>> Stashed changes
 } from 'react-native';
+// 1. SafeAreaView para gerenciar Notch e barras de navegação
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../supabase';
 
@@ -41,6 +47,7 @@ const PulseCard = ({ item, nickname, navigation }) => {
   return (
     <TouchableOpacity 
       style={styles.card}
+<<<<<<< Updated upstream
       onPress={() => {
         // SEGURANÇA: Garante que entras como Admin se o pulso for teu
         navigation.navigate('Chat', { 
@@ -49,6 +56,10 @@ const PulseCard = ({ item, nickname, navigation }) => {
           isAdmin: isOwner 
         });
       }}
+=======
+      onPress={() => navigation.navigate('Chat', { nickname, pulseCode: item.pulse_code })}
+      activeOpacity={0.8}
+>>>>>>> Stashed changes
     >
       <Text style={styles.cardCode}>{item.pulse_code}</Text>
       <Text style={[styles.cardHost, { color: isOwner ? ALEX_COLOR : '#444' }]}>
@@ -133,13 +144,56 @@ export default function SessionsScreen({ route, navigation }) {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handlePressIn = () => {
+    let duration = 3000;
+    let elapsed = 0;
+    let currentInterval = 400;
+
+    const runHaptic = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      elapsed += currentInterval;
+      currentInterval = Math.max(50, 400 - (elapsed / duration) * 350);
+      if (elapsed < duration) {
+        hapticTimer.current = setTimeout(runHaptic, currentInterval);
+      }
+    };
+
+    runHaptic();
+
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: duration,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished) handlePanicAction();
+    });
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 1.5, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -1.5, duration: 50, useNativeDriver: true }),
+      ])
+    ).start();
+  };
+
+  const handlePressOut = () => {
+    if (hapticTimer.current) clearTimeout(hapticTimer.current);
+    Animated.timing(progressAnim).stop();
+    Animated.timing(shakeAnim).stop();
+    progressAnim.setValue(0);
+    shakeAnim.setValue(0);
+  };
+
+>>>>>>> Stashed changes
   const barWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>ACTIVE_SIGNALS</Text>
         <View style={[styles.headerLine, { backgroundColor: ALEX_COLOR }]} />
@@ -147,7 +201,11 @@ export default function SessionsScreen({ route, navigation }) {
       </View>
 
       {loading ? (
+<<<<<<< Updated upstream
         <ActivityIndicator style={{ flex: 1 }} color={ALEX_COLOR} />
+=======
+        <ActivityIndicator style={{ flex: 1 }} color="#222" />
+>>>>>>> Stashed changes
       ) : (
         <FlatList
           data={sessions}
@@ -161,7 +219,11 @@ export default function SessionsScreen({ route, navigation }) {
       )}
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.newBtn} onPress={() => navigation.navigate('Config', { nickname })}>
+        <TouchableOpacity 
+          style={styles.newBtn} 
+          onPress={() => navigation.navigate('Config', { nickname })}
+          activeOpacity={0.7}
+        >
           <Text style={[styles.newBtnText, { color: ALEX_COLOR }]}>+ INITIALIZE_NEW_PULSE</Text>
         </TouchableOpacity>
 
@@ -183,27 +245,53 @@ export default function SessionsScreen({ route, navigation }) {
         </View>
         <Text style={styles.backoraLogo}>BY BACKORA</Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  header: { marginTop: 80, alignItems: 'center', marginBottom: 30 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
+  header: { 
+    marginTop: Platform.OS === 'android' ? 20 : 40, 
+    alignItems: 'center', 
+    marginBottom: 30 
+  },
   headerTitle: { color: '#FFF', fontSize: 14, letterSpacing: 8, fontWeight: '200' },
   headerLine: { width: 30, height: 1, marginTop: 10, opacity: 0.5 },
   headerSubtitle: { color: '#444', fontSize: 8, letterSpacing: 3, marginTop: 12 },
   list: { paddingHorizontal: 20, paddingBottom: 250 },
   row: { justifyContent: 'center' },
-  card: { backgroundColor: '#050505', width: (width - 60) / 2, margin: 8, padding: 18, borderWidth: 0.5, borderColor: '#111', alignItems: 'center' },
+  card: { 
+    backgroundColor: '#050505', 
+    width: (width - 60) / 2, 
+    margin: 8, 
+    padding: 18, 
+    borderWidth: 0.5, 
+    borderColor: '#111', 
+    alignItems: 'center',
+    elevation: 0, // Garante que o Android não coloque sombra nos cards
+  },
   cardCode: { color: '#C9C4C4', fontSize: 14, letterSpacing: 3, fontWeight: '300' },
   cardHost: { fontSize: 7, letterSpacing: 1, marginTop: 6 },
   cardDivider: { width: '40%', height: 0.5, backgroundColor: '#111', marginVertical: 14 },
   cardFooter: { flexDirection: 'row', alignItems: 'center' },
   cardTime: { color: '#555', fontSize: 9, letterSpacing: 1, marginRight: 6 },
   statusDot: { width: 3, height: 3, borderRadius: 1.5 },
+<<<<<<< Updated upstream
   footer: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
   newBtn: { marginBottom: 15 },
+=======
+  footer: { 
+    position: 'absolute', 
+    bottom: Platform.OS === 'android' ? 20 : 40, 
+    width: '100%', 
+    alignItems: 'center' 
+  },
+  newBtn: { marginBottom: 25 },
+>>>>>>> Stashed changes
   newBtnText: { fontSize: 9, letterSpacing: 3 },
   joinBtn: { marginBottom: 25 },
   joinBtnText: { color: '#444', fontSize: 8, letterSpacing: 3 },

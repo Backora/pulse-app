@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  Alert, 
+  Platform 
+} from 'react-native';
+// 1. SafeAreaView para gerenciar Notch e barras de navegação
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../supabase'; 
 
 export default function ConfigPage({ route, navigation }) {
@@ -46,6 +56,7 @@ export default function ConfigPage({ route, navigation }) {
 
       if (error) throw error;
 
+<<<<<<< Updated upstream
       // 4. SUCESSO -> CHAT
       navigation.navigate('Chat', { 
         nickname, 
@@ -54,6 +65,16 @@ export default function ConfigPage({ route, navigation }) {
         isNew: true 
       });
 
+=======
+      if (data && data[0]) {
+        const pulse = data[0];
+        navigation.navigate('Chat', { 
+          nickname, 
+          pulseCode: pulse.pulse_code,
+          isNew: true 
+        });
+      }
+>>>>>>> Stashed changes
     } catch (error) {
       console.error("ERRO_AO_CRIAR:", error.message);
       Alert.alert("SYSTEM_FAILURE", "Erro ao gravar no banco: " + error.message);
@@ -63,7 +84,7 @@ export default function ConfigPage({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
         <View style={styles.header}>
           <Text style={styles.headerLabel}>PULSE_CONFIGURATION</Text>
@@ -76,6 +97,7 @@ export default function ConfigPage({ route, navigation }) {
               key={time} 
               style={styles.optionBtn} 
               onPress={() => setSelectedDuration(time)}
+              activeOpacity={0.7}
             >
               <Text style={[
                 styles.optionText, 
@@ -110,24 +132,62 @@ export default function ConfigPage({ route, navigation }) {
           <Text style={styles.footerText}>BACKORA_OS_v2.6</Text>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  inner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  header: { position: 'absolute', top: 100, alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
+  inner: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 40 
+  },
+  header: { 
+    position: 'absolute', 
+    top: Platform.OS === 'android' ? 60 : 100, // Ajuste para compensar StatusBar
+    alignItems: 'center' 
+  },
   headerLabel: { color: '#444', fontSize: 8, letterSpacing: 6, fontWeight: '300' },
   dot: { width: 2, height: 2, borderRadius: 1, marginTop: 15, opacity: 0.3 },
   optionsWrapper: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 40 },
   optionBtn: { padding: 10, alignItems: 'center' },
   optionText: { fontSize: 18, letterSpacing: 8, fontWeight: '100' },
   activeBar: { width: 20, height: 1, marginTop: 8 },
+<<<<<<< Updated upstream
   generateBtn: { marginTop: 100, borderWidth: 0.5, borderColor: '#222', paddingVertical: 15, paddingHorizontal: 30, alignItems: 'center' },
+=======
+
+  generateBtn: { 
+    marginTop: 100,
+    // 2. Borda Ultra-fina (0.5px) para look HD
+    borderWidth: 0.5, 
+    borderColor: '#222', 
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    // 3. Remove elevação/sombra cinza nativa do Android
+    ...Platform.select({
+      android: { elevation: 0 },
+      ios: { shadowOpacity: 0 }
+    })
+  },
+>>>>>>> Stashed changes
   generateText: { fontSize: 9, letterSpacing: 6, fontWeight: '300' },
   backBtn: { marginTop: 80 },
   backText: { color: '#333', fontSize: 8, letterSpacing: 4 },
+<<<<<<< Updated upstream
   footer: { position: 'absolute', bottom: 40 },
+=======
+  
+  footer: { 
+    position: 'absolute', 
+    bottom: Platform.OS === 'android' ? 20 : 40 
+  },
+>>>>>>> Stashed changes
   footerText: { color: '#222', fontSize: 8, letterSpacing: 10, fontWeight: '300' }
 });

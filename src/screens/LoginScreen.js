@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback,
   ActivityIndicator, Alert 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../supabase';
 
 export default function LoginScreen({ navigation }) {
@@ -16,19 +17,17 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // AJUSTE: Enviando os 3 parâmetros que a função do Alex exige
       const { error } = await supabase.rpc('register_user', {
         p_username: nickname, 
         p_avatar_url: '' 
       });
 
       if (error) throw error;
-
       navigation.navigate('Menu', { nickname });
       
     } catch (error) {
       console.error("Erro no acesso:", error);
-      Alert.alert("SIGNAL_LOST", "Erro ao sincronizar identificação. Verifica os parâmetros com o Alex.");
+      Alert.alert("SIGNAL_LOST", "Erro ao sincronizar identificação.");
     } finally {
       setLoading(false);
     }
@@ -36,13 +35,13 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
           style={styles.inner}
         >
           
-          {/* LOGO AREA */}
+          {/* LOGO AREA - Ajustada para simetria perfeita */}
           <View style={styles.logoWrapper}>
             <Text style={[styles.logo, { color: ALEX_COLOR }]}>P U L S E</Text>
             <Text style={styles.subLogo}>ENCRYPTED COMMUNICATION</Text> 
@@ -61,12 +60,20 @@ export default function LoginScreen({ navigation }) {
               selectionColor={ALEX_COLOR}
               cursorColor={ALEX_COLOR}
               editable={!loading}
+              underlineColorAndroid="transparent"
             />
             
             <TouchableOpacity 
-              style={[styles.button, { opacity: nickname.length > 2 && !loading ? 1 : 0 }]}
+              style={[
+                styles.button, 
+                { 
+                  opacity: nickname.length > 2 && !loading ? 1 : 0,
+                  borderColor: '#1A1A1A'
+                }
+              ]}
               onPress={handleAccess}
               disabled={nickname.length <= 2 || loading}
+              activeOpacity={0.7}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={ALEX_COLOR} />
@@ -82,7 +89,7 @@ export default function LoginScreen({ navigation }) {
           </View>
 
         </KeyboardAvoidingView>
-      </View>
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }
@@ -107,7 +114,8 @@ const styles = StyleSheet.create({
     fontWeight: '100', 
     letterSpacing: 20, 
     textAlign: 'center',
-    paddingLeft: 20, 
+    // COMPENSAÇÃO ANDROID:
+    paddingLeft: Platform.OS === 'android' ? 20 : 0, 
   },
   subLogo: {
     color: '#555',
@@ -115,7 +123,9 @@ const styles = StyleSheet.create({
     letterSpacing: 6,
     textAlign: 'center',
     marginTop: 15,
-    fontWeight: '400'
+    fontWeight: '400',
+    // COMPENSAÇÃO ANDROID:
+    paddingLeft: Platform.OS === 'android' ? 6 : 0,
   },
   inputContainer: {
     width: '100%',
@@ -129,29 +139,41 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     fontWeight: '300',
     borderBottomWidth: 0.5,
-    borderBottomColor: '#222'
+    borderBottomColor: '#222',
+    // COMPENSAÇÃO ANDROID para o placeholder:
+    paddingLeft: Platform.OS === 'android' ? 5 : 0,
   },
   button: { 
     marginTop: 50, 
-    paddingVertical: 10,
-    paddingHorizontal: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 35,
     minHeight: 40,
-    justifyContent: 'center'
+    justifyContent: 'center',
+    borderWidth: 0.5,
+    borderRadius: 2,
+    ...Platform.select({
+      android: { elevation: 0 },
+      ios: { shadowOpacity: 0 }
+    })
   },
   buttonText: { 
     fontSize: 10, 
     letterSpacing: 8, 
-    fontWeight: '300' 
+    fontWeight: '300',
+    // COMPENSAÇÃO ANDROID:
+    paddingLeft: Platform.OS === 'android' ? 8 : 0,
   },
   footer: { 
     position: 'absolute', 
-    bottom: 40, 
+    bottom: Platform.OS === 'android' ? 20 : 40, 
     alignSelf: 'center' 
   },
   footerText: { 
     color: '#444', 
     fontSize: 8, 
     letterSpacing: 10, 
-    fontWeight: '300' 
+    fontWeight: '300',
+    // COMPENSAÇÃO ANDROID:
+    paddingLeft: Platform.OS === 'android' ? 10 : 0,
   }
 });

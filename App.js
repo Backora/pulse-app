@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar } from 'react-native';
+import { StatusBar, Platform } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar'; // Controle da barra inferior
 
 // Importa as tuas telas
 import LoginScreen from './src/screens/LoginScreen';
@@ -9,41 +10,50 @@ import MenuScreen from './src/screens/MenuScreen';
 import ConfigPage from './src/screens/ConfigPage';
 import ChatScreen from './src/screens/ChatScreen'; 
 import SessionsScreen from './src/screens/SessionsScreen';
-import JoinScreen from './src/screens/JoinScreen'; // Importe corrigido aqui
+import JoinScreen from './src/screens/JoinScreen';
 
 const Stack = createStackNavigator();
 
 export default function App() {
+  
+  useEffect(() => {
+    // Configurações específicas para Android manter o look "Pure Black"
+    if (Platform.OS === 'android') {
+      const prepareSystemUI = async () => {
+        // 1. Força a barra de navegação (botões de baixo) a ficar preta e sem bordas nativas
+        await NavigationBar.setBackgroundColorAsync('#000000');
+        await NavigationBar.setButtonStyleAsync('light'); // Ícones brancos
+      };
+      prepareSystemUI();
+    }
+  }, []);
+
   return (
     <NavigationContainer>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      {/* 2. StatusBar Translucid: Impede que o Android crie aquela faixa cinza no topo */}
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true} 
+      />
       
       <Stack.Navigator 
         initialRouteName="Login"
         screenOptions={{
           headerShown: false,
           animationEnabled: true,
-          cardStyle: { backgroundColor: '#000' }
+          // 3. Garante que o fundo entre trocas de tela seja sempre preto absoluto
+          cardStyle: { backgroundColor: '#000' },
+          // 4. Melhora a performance de transição no Android
+          detachPreviousScreen: !Platform.OS === 'android' 
         }}
       >
-        {/* Tela 1: Entrada/Identificação */}
         <Stack.Screen name="Login" component={LoginScreen} />
-
-        {/* Tela 2: Dashboard principal (onde está o CREATE e JOIN) */}
         <Stack.Screen name="Menu" component={MenuScreen} />
-
-        {/* Tela 3: Definição do tempo do Pulse */}
         <Stack.Screen name="Config" component={ConfigPage} />
-
-        {/* Tela 4: Lista de sessões ativas */}
         <Stack.Screen name="Sessions" component={SessionsScreen} /> 
-
-        {/* Tela 5: Introdução do código para entrar (Join) */}
         <Stack.Screen name="Join" component={JoinScreen} />
-
-        {/* Tela 6: Onde as mensagens desaparecem */}
         <Stack.Screen name="Chat" component={ChatScreen} />
-        
       </Stack.Navigator>
     </NavigationContainer>
   );

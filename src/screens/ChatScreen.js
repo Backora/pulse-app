@@ -4,6 +4,7 @@ import {
   TouchableOpacity, KeyboardAvoidingView, Platform, 
   Alert, ActivityIndicator 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../supabase';
 import EntryRitual from '../components/EntryRitual';
 
@@ -12,14 +13,21 @@ export default function ChatScreen({ route, navigation }) {
   const nickname = params.nickname || 'OPERATOR';
   const pulseCode = params.pulseCode || '---';
   const isNew = params.isNew || false;
+<<<<<<< Updated upstream
   
   // 1. EXTRAIR O isAdmin QUE VEM DA JOIN OU CONFIG
   const isAdmin = params.isAdmin || false; 
+=======
+>>>>>>> Stashed changes
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+<<<<<<< Updated upstream
   const [showRitual, setShowRitual] = useState(isNew);
+=======
+  const [showRitual, setShowRitual] = useState(isNew); 
+>>>>>>> Stashed changes
   
   const ALEX_COLOR = '#C9C4C4';
   const flatListRef = useRef();
@@ -84,7 +92,7 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Sessions', { nickname })}>
@@ -112,28 +120,31 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </View>
 
-      {/* CHAT LIST */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id.toString()}
-        inverted
-        renderItem={({ item }) => (
-          <View style={[
-            styles.msgContainer, 
-            item.sender === nickname ? styles.myMsg : styles.theirMsg
-          ]}>
-            <Text style={styles.senderName}>{item.sender.toUpperCase()}</Text>
-            <Text style={[styles.msgText, { color: item.sender === nickname ? ALEX_COLOR : '#A0A0A0' }]}>
-              {item.content}
-            </Text>
-          </View>
-        )}
-        contentContainerStyle={styles.chatList}
-      />
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id.toString()}
+          inverted
+          renderItem={({ item }) => (
+            <View style={[
+              styles.msgContainer, 
+              item.sender === nickname ? styles.myMsg : styles.theirMsg
+            ]}>
+              <Text style={styles.senderName}>{item.sender.toUpperCase()}</Text>
+              <Text style={[styles.msgText, { color: item.sender === nickname ? ALEX_COLOR : '#A0A0A0' }]}>
+                {item.content}
+              </Text>
+            </View>
+          )}
+          contentContainerStyle={styles.chatList}
+        />
 
-      {/* INPUT AREA */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={20}>
+        {/* INPUT AREA */}
         <View style={styles.inputArea}>
           <TextInput
             style={[styles.input, { color: ALEX_COLOR }]}
@@ -142,6 +153,7 @@ export default function ChatScreen({ route, navigation }) {
             value={newMessage}
             onChangeText={setNewMessage}
             multiline
+            underlineColorAndroid="transparent" 
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
             <Text style={[styles.sendText, { color: ALEX_COLOR }]}>SEND</Text>
@@ -152,35 +164,53 @@ export default function ChatScreen({ route, navigation }) {
       {showRitual && (
         <EntryRitual onFinish={() => setShowRitual(false)} />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
   header: { 
-    paddingTop: 60, paddingBottom: 20, paddingHorizontal: 30, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    borderBottomWidth: 0.5, borderBottomColor: '#1A1A1A'
+    paddingVertical: 15, 
+    paddingHorizontal: 30, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    borderBottomWidth: 0.5, 
+    borderBottomColor: '#1A1A1A',
+    // Remove qualquer sombra nativa do Android
+    elevation: 0,
   },
   headerInfo: { alignItems: 'center', flex: 1 },
   headerTitle: { fontSize: 12, letterSpacing: 6, fontWeight: '200' },
   headerSubtitle: { color: '#666', fontSize: 7, letterSpacing: 3, marginTop: 4 },
+<<<<<<< Updated upstream
   backIcon: { color: '#666', fontSize: 18, width: 40 },
+=======
+  backIcon: { color: '#666', fontSize: 20, paddingRight: 10 },
+>>>>>>> Stashed changes
   killBtn: { color: '#800', fontSize: 9, letterSpacing: 2, fontWeight: '400' },
   lockedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#1A1A1A' },
   chatList: { paddingHorizontal: 30, paddingVertical: 20 },
-  msgContainer: { marginBottom: 30, maxWidth: '90%' },
+  msgContainer: { 
+    marginBottom: 30, 
+    maxWidth: '90%',
+    // Força o Android a não desenhar profundidade
+    elevation: 0,
+  },
   myMsg: { 
     alignSelf: 'flex-end', 
     alignItems: 'flex-end',
-    borderRightWidth: 1, 
+    borderRightWidth: 0.5, 
     borderRightColor: '#C9C4C4', 
     paddingRight: 15 
   },
   theirMsg: { 
     alignSelf: 'flex-start', 
-    borderLeftWidth: 1, 
+    borderLeftWidth: 0.5, 
     borderLeftColor: '#333',
     paddingLeft: 15 
   },
@@ -189,13 +219,28 @@ const styles = StyleSheet.create({
   inputArea: { 
     flexDirection: 'row', 
     paddingHorizontal: 30, 
-    paddingVertical: 20,
+    paddingVertical: 15,
     borderTopWidth: 0.5, 
     borderTopColor: '#1A1A1A', 
     alignItems: 'center',
-    marginBottom: Platform.OS === 'ios' ? 30 : 10
+    backgroundColor: '#000',
+    marginBottom: Platform.OS === 'ios' ? 0 : 5,
+    elevation: 0,
   },
-  input: { flex: 1, fontSize: 13, letterSpacing: 1, fontWeight: '300' },
-  sendBtn: { marginLeft: 20 },
-  sendText: { fontSize: 10, letterSpacing: 3, fontWeight: '300' }
+  input: { 
+    flex: 1, 
+    fontSize: 13, 
+    letterSpacing: 1, 
+    fontWeight: '300',
+    minHeight: 40,
+  },
+  sendBtn: { 
+    marginLeft: 20, 
+    paddingVertical: 10 
+  },
+  sendText: { 
+    fontSize: 10, 
+    letterSpacing: 3, 
+    fontWeight: '300' 
+  }
 });

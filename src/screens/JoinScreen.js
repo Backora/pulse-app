@@ -2,8 +2,14 @@ import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, 
   TouchableOpacity, ActivityIndicator, Alert, 
+<<<<<<< Updated upstream
   Keyboard, TouchableWithoutFeedback 
+=======
+  Keyboard, TouchableWithoutFeedback, Platform 
+>>>>>>> Stashed changes
 } from 'react-native';
+// 1. SafeAreaView para gerenciar o topo e base no Android/iOS
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../supabase';
 
 export default function JoinScreen({ route, navigation }) {
@@ -91,7 +97,7 @@ export default function JoinScreen({ route, navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.inner}>
           
           <View style={styles.headerBox}>
@@ -112,12 +118,17 @@ export default function JoinScreen({ route, navigation }) {
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleJoin}
+<<<<<<< Updated upstream
+=======
+              underlineColorAndroid="transparent" // Remove linha nativa do Android
+>>>>>>> Stashed changes
             />
 
             <TouchableOpacity 
-              style={[styles.actionBtn, { borderColor: '#222' }]} 
+              style={styles.actionBtn} 
               onPress={handleJoin}
               disabled={loading}
+              activeOpacity={0.7}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={ALEX_COLOR} />
@@ -135,24 +146,62 @@ export default function JoinScreen({ route, navigation }) {
             <Text style={styles.footerText}>BY BACKORA</Text>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  inner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  headerBox: { position: 'absolute', top: 60, left: 40 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
+  inner: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 40 
+  },
+  headerBox: { 
+    position: 'absolute', 
+    top: Platform.OS === 'android' ? 20 : 60, 
+    left: 40 
+  },
   operatorLabel: { color: '#666', fontSize: 8, letterSpacing: 4, fontWeight: '300' },
   statusLine: { width: 20, height: 1, marginTop: 8, opacity: 0.5 },
   centerWrapper: { width: '100%', alignItems: 'center' },
   inputLabel: { color: '#444', fontSize: 7, letterSpacing: 5, marginBottom: 20 },
-  input: { fontSize: 28, letterSpacing: 8, fontWeight: '200', textAlign: 'center', width: '100%', marginBottom: 40 },
-  actionBtn: { borderWidth: 0.5, paddingVertical: 12, paddingHorizontal: 30 },
+  input: { 
+    fontSize: 28, 
+    letterSpacing: 8, 
+    fontWeight: '200', 
+    textAlign: 'center', 
+    width: '100%', 
+    marginBottom: 40 
+  },
+  actionBtn: { 
+    borderWidth: 0.5, 
+    borderColor: '#222', 
+    paddingVertical: 12, 
+    paddingHorizontal: 30,
+    // 2. Remove sombra/elevação no Android
+    ...Platform.select({
+      android: { elevation: 0 },
+      ios: { shadowOpacity: 0 }
+    })
+  },
   actionText: { fontSize: 9, letterSpacing: 4, fontWeight: '300' },
-  backBtn: { marginTop: 80, borderBottomWidth: 0.5, borderBottomColor: '#222', paddingBottom: 4 },
+  backBtn: { 
+    marginTop: 80, 
+    borderBottomWidth: 0.5, 
+    borderBottomColor: '#222', 
+    paddingBottom: 4 
+  },
   backText: { color: '#444', fontSize: 8, letterSpacing: 4, fontWeight: '300' },
-  footer: { position: 'absolute', bottom: 40, alignItems: 'center' },
+  footer: { 
+    position: 'absolute', 
+    bottom: Platform.OS === 'android' ? 20 : 40, 
+    alignItems: 'center' 
+  },
   footerText: { color: '#444', fontSize: 8, letterSpacing: 10, fontWeight: '300' }
 });

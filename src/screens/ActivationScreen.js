@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { supabase } from '../supabase'; // Importa a conexão que criaste
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Alert, 
+  Platform 
+} from 'react-native';
+// 1. Importação necessária para gerenciar o topo da tela no Android/iOS
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../supabase';
 
 export default function ActivationScreen({ navigation }) {
   const [pulseKey, setPulseKey] = useState('');
@@ -14,7 +25,6 @@ export default function ActivationScreen({ navigation }) {
 
     setLoading(true);
 
-    // 1. Verificar se a chave existe na tabela do Alex
     const { data, error } = await supabase
       .from('keys')
       .select('*')
@@ -27,19 +37,14 @@ export default function ActivationScreen({ navigation }) {
       return;
     }
 
-    // 2. Lógica de Bloqueio de Dispositivo (Fase 2 avançada)
-    // Por agora, vamos apenas deixar passar se a chave existir
     console.log('Chave válida!', data);
-    
-    // Aqui tu mandarias o user para a Home/Chat
-    // navigation.navigate('ChatList'); 
-    
     Alert.alert('Sucesso', 'Acesso autorizado. O Pulso está ativo.');
     setLoading(false);
   };
 
   return (
-    <View style={styles.container}>
+    // 2. SafeAreaView substitui a View principal para evitar cortes no topo
+    <SafeAreaView style={styles.container}>
       <Text style={styles.logo}>PULSE</Text>
       
       <View style={styles.inputContainer}>
@@ -50,7 +55,8 @@ export default function ActivationScreen({ navigation }) {
           value={pulseKey}
           onChangeText={setPulseKey}
           autoCapitalize="characters"
-          secureTextEntry // Mantém a chave secreta ao digitar
+          secureTextEntry
+          underlineColorAndroid="transparent" // Remove linha azul padrão do Android
         />
       </View>
 
@@ -67,14 +73,14 @@ export default function ActivationScreen({ navigation }) {
       </TouchableOpacity>
 
       <Text style={styles.footer}>ENCRYPTED ACCESS ONLY</Text>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // Blackora Style
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -88,8 +94,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
+    // 3. Substituição de borda grossa por visual minimalista HD
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#1A1A1A',
     marginBottom: 40,
   },
   input: {
@@ -102,10 +109,15 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     padding: 15,
-    borderWidth: 1,
-    borderColor: '#fff',
+    // 4. Implementação da borda fina consistente com remoção de sombra Android
+    borderWidth: 0.5,
+    borderColor: '#C9C4C4', // Usando sua cor metalizada
     alignItems: 'center',
-    borderRadius: 5,
+    borderRadius: 2, // Cantos mais retos para look tech
+    ...Platform.select({
+      android: { elevation: 0 },
+      ios: { shadowOpacity: 0 }
+    })
   },
   buttonText: {
     color: '#fff',
