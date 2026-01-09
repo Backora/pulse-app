@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   logo: { 
     fontSize: 22, 
     fontWeight: '100', 
-    letterSpacing: 20, 
+    letterSpacing: Platform.OS === 'android' ? 10 : 20, 
     textAlign: 'center',
     // COMPENSAÇÃO ANDROID:
     paddingLeft: Platform.OS === 'android' ? 20 : 0, 
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   input: { 
-    width: '80%', 
+    width: '100%', 
     fontSize: 12, 
     letterSpacing: 5, 
     paddingVertical: 15, 
