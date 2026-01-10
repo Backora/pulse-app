@@ -1,33 +1,33 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { supabase } from '../supabase';
+import { translations } from '../translations'; 
 
 export default function MenuScreen({ route, navigation }) {
+  // HERANÇA: Pega o nick e a língua que vieram do Login
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
-  const [loading, setLoading] = useState(false);
+  const lang = params.lang || 'pt'; // Recupera a língua escolhida
   
+  const [loading, setLoading] = useState(false);
+  const t = translations[lang] || translations['pt'];
   const ALEX_COLOR = '#C9C4C4';
 
-  // Função para desconectar e apagar TUDO (Panic)
+  // Função para desconectar e apagar TUDO (Panic) - TRADUZIDA
   const handleDisconnect = () => {
     Alert.alert(
-      "CONFIRM_DISCONNECT",
-      "Sair apagará o teu perfil e todas as sessões ativas permanentemente. Continuar?",
+      t.panic_title || "CONFIRM_DISCONNECT",
+      t.panic_msg || "Sair apagará o teu perfil e todas as sessões ativas permanentemente. Continuar?",
       [
-        { text: "ABORT", style: "cancel" },
+        { text: t.panic_abort || "ABORT", style: "cancel" },
         { 
-          text: "WIPE_AND_EXIT", 
+          text: t.panic_confirm || "WIPE_AND_EXIT", 
           style: "destructive",
           onPress: async () => {
             setLoading(true);
             try {
-              // Chamamos a mesma função de pânico que configuramos com o Alex
               const { error } = await supabase.rpc('panic', { p_user_id: nickname });
-              
               if (error) throw error;
-
-              // Após limpar o rastro, volta para o Login
               navigation.replace('Login');
             } catch (error) {
               console.error("Erro ao desconectar:", error);
@@ -45,9 +45,9 @@ export default function MenuScreen({ route, navigation }) {
     <View style={styles.container}>
       <View style={styles.inner}>
         
-        {/* Identificação do Operador */}
+        {/* Identificação do Operador - TRADUZIDO */}
         <View style={styles.headerBox}>
-          <Text style={styles.operatorLabel}>ID // {nickname.toUpperCase()}</Text>
+          <Text style={styles.operatorLabel}>{t.menu_welcome}{nickname.toUpperCase()}</Text>
           <View style={[styles.statusLine, { backgroundColor: ALEX_COLOR }]} />
         </View>
 
@@ -55,30 +55,30 @@ export default function MenuScreen({ route, navigation }) {
         <View style={styles.menuWrapper}>
           <View style={styles.menuRow}>
             
-            {/* CRIAR: Vai para a tela de Configuração */}
+            {/* CRIAR: Passa lang para a próxima tela */}
             <TouchableOpacity 
               style={styles.menuOption} 
-              onPress={() => navigation.navigate('Config', { nickname })}
+              onPress={() => navigation.navigate('Config', { nickname, lang })}
             >
               <Text style={[styles.menuTitle, { color: ALEX_COLOR }]}>CREATE</Text>
-              <Text style={styles.menuDesc}>New Session</Text>
+              <Text style={styles.menuDesc}>{t.menu_create}</Text>
             </TouchableOpacity>
 
             <View style={styles.verticalDivider} />
 
-            {/* JOIN: CORRIGIDO para ir para 'Join' em vez de 'Sessions' */}
+            {/* JOIN: Passa lang para a próxima tela */}
             <TouchableOpacity 
               style={styles.menuOption}
-              onPress={() => navigation.navigate('Join', { nickname })}
+              onPress={() => navigation.navigate('Join', { nickname, lang })}
             >
               <Text style={[styles.menuTitle, { color: ALEX_COLOR }]}>JOIN</Text>
-              <Text style={styles.menuDesc}>Intercept</Text>
+              <Text style={styles.menuDesc}>{t.menu_join}</Text>
             </TouchableOpacity>
 
           </View>
         </View>
 
-        {/* Botão de Terminar - Agora com a lógica de WIPE */}
+        {/* Botão de Terminar - TRADUZIDO */}
         <TouchableOpacity 
           onPress={handleDisconnect} 
           style={[styles.exitBtn, { opacity: loading ? 0.5 : 1 }]}
@@ -87,13 +87,13 @@ export default function MenuScreen({ route, navigation }) {
           {loading ? (
             <ActivityIndicator size="small" color="#666" />
           ) : (
-            <Text style={styles.exitText}>DISCONNECT</Text>
+            <Text style={styles.exitText}>{t.chat_leave}</Text>
           )}
         </TouchableOpacity>
 
-        {/* Footer */}
+        {/* Footer - TRADUZIDO */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>BY BACKORA</Text>
+          <Text style={styles.footerText}>{t.footer}</Text>
         </View>
 
       </View>
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   menuOption: { flex: 1, alignItems: 'center', paddingVertical: 20 },
   menuTitle: { fontSize: 14, fontWeight: '200', letterSpacing: 10 },
-  menuDesc: { color: '#555', fontSize: 7, letterSpacing: 3, marginTop: 12, textTransform: 'uppercase' },
+  menuDesc: { color: '#555', fontSize: 7, letterSpacing: 3, marginTop: 12, textTransform: 'uppercase', textAlign: 'center' },
   verticalDivider: { width: 0.5, height: 60, backgroundColor: '#222' },
   exitBtn: { marginTop: 100, borderBottomWidth: 0.5, borderBottomColor: '#333', paddingBottom: 4 },
   exitText: { color: '#666', fontSize: 9, letterSpacing: 5, fontWeight: '300' },

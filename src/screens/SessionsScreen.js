@@ -1,30 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  ActivityIndicator, Dimensions, Pressable, Animated 
+  ActivityIndicator, Pressable, Animated, Dimensions 
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../supabase';
+import { translations } from '../translations';
 
-const { width } = Dimensions.get('window');
-
-const PulseCard = ({ item, nickname, navigation }) => {
+// --- COMPONENTE DE LINHA COM TIMER ---
+const SessionLine = ({ item, nickname, navigation, t, lang, ALEX_COLOR }) => {
   const [timeLeft, setTimeLeft] = useState('--:--');
-  const ALEX_COLOR = '#C9C4C4';
-  
-  // Lógica de Identidade: Usando a coluna que o Alex confirmou (p_creator_id)
-  const creator = item.p_creator_id || 'UNKNOWN';
-  const isOwner = creator.toLowerCase() === nickname.toLowerCase();
 
   useEffect(() => {
     const updateTimer = () => {
-      const expiryDate = item.expires_at;
-      if (!expiryDate) return;
-      
-      const expiry = new Date(expiryDate).getTime();
+      const expiry = new Date(item.expires_at).getTime();
       const now = new Date().getTime();
       const diff = expiry - now;
-      
+
       if (diff <= 0) {
         setTimeLeft('WIPED');
       } else {
@@ -33,31 +25,35 @@ const PulseCard = ({ item, nickname, navigation }) => {
         setTimeLeft(`${m}:${s < 10 ? '0' : ''}${s}`);
       }
     };
-    const t = setInterval(updateTimer, 1000);
+
+    const timer = setInterval(updateTimer, 1000);
     updateTimer();
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [item]);
+
+  const isOwner = item.p_creator_id?.toLowerCase() === nickname.toLowerCase();
 
   return (
     <TouchableOpacity 
-      style={styles.card}
-      onPress={() => {
-        // SEGURANÇA: Garante que entras como Admin se o pulso for teu
-        navigation.navigate('Chat', { 
-          nickname, 
-          pulseCode: item.pulse_code,
-          isAdmin: isOwner 
-        });
-      }}
+      style={styles.sessionLine}
+      onPress={() => navigation.navigate('Chat', { 
+        nickname, 
+        pulseCode: item.pulse_code, 
+        isAdmin: isOwner, 
+        lang 
+      })}
     >
-      <Text style={styles.cardCode}>{item.pulse_code}</Text>
-      <Text style={[styles.cardHost, { color: isOwner ? ALEX_COLOR : '#444' }]}>
-        {isOwner ? 'ROLE: HOST' : `FROM: ${creator.toUpperCase()}`}
-      </Text>
-      <View style={styles.cardDivider} />
-      <View style={styles.cardFooter}>
-        <Text style={styles.cardTime}>{timeLeft}</Text>
-        <View style={[styles.statusDot, { backgroundColor: isOwner ? ALEX_COLOR : '#333' }]} />
+      <View style={styles.lineLeft}>
+        <Text style={styles.pulseCode}>{item.pulse_code}</Text>
+        <Text style={[styles.roleTag, { color: isOwner ? ALEX_COLOR : '#333' }]}>
+          {isOwner ? '// HOST' : '// GUEST'}
+        </Text>
+      </View>
+      <View style={styles.lineRight}>
+         <Text style={[styles.timeTag, { color: timeLeft === 'WIPED' ? '#500' : '#333' }]}>
+           {timeLeft}
+         </Text>
+         <View style={[styles.statusDot, { backgroundColor: isOwner ? ALEX_COLOR : '#222' }]} />
       </View>
     </TouchableOpacity>
   );
@@ -66,122 +62,115 @@ const PulseCard = ({ item, nickname, navigation }) => {
 export default function SessionsScreen({ route, navigation }) {
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
+  const lang = params.lang || 'en'; // PADRÃO INGLÊS
+  
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const t = translations[lang] || translations['en'];
   const ALEX_COLOR = '#C9C4C4';
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   const fetchSessions = async () => {
     try {
-      // 1. Busca pulses onde és o criador
-      const { data: myPulses } = await supabase
-        .from('pulses')
-        .select('*')
-        .eq('p_creator_id', nickname);
-
-      // 2. Busca pulses onde entraste (Join)
-      const { data: joinedInfo } = await supabase
-        .from('pulse_participants')
-        .select('pulse_code, pulses(*)')
-        .eq('user_id', nickname);
-
-      const joinedPulses = joinedInfo?.map(j => j.pulses).filter(p => p !== null) || [];
+      const { data: myPulses } = await supabase.from('pulses').select('*').eq('p_creator_id', nickname);
+      const { data: joinedInfo } = await supabase.from('pulse_participants').select('pulses(*)').eq('user_id', nickname);
       
-      // 3. Combina e remove expirados/duplicados
+      const joinedPulses = joinedInfo?.map(j => j.pulses).filter(p => p !== null) || [];
       const now = new Date().getTime();
       const combined = [...(myPulses || []), ...joinedPulses];
       
       const uniqueAndValid = combined
-        .filter((v, i, a) => 
-          v.pulse_code && 
-          a.findIndex(t => t.pulse_code === v.pulse_code) === i && // Único
-          new Date(v.expires_at).getTime() > now // Não expirado
-        )
+        .filter((v, i, a) => v.pulse_code && a.findIndex(t_idx => t_idx.pulse_code === v.pulse_code) === i && new Date(v.expires_at).getTime() > now)
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
       setSessions(uniqueAndValid);
-    } catch (e) {
-      console.log("FETCH_ERROR:", e);
-    } finally {
-      setLoading(false);
+    } catch (e) { 
+      console.log("FETCH_ERROR:", e); 
+    } finally { 
+      setLoading(false); 
     }
   };
 
   useEffect(() => {
     fetchSessions();
     const unsubscribe = navigation.addListener('focus', fetchSessions);
-
-    // Sync em tempo real para quando o Alex criar algo ou tu apagares
-    const channel = supabase.channel('global_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pulses' }, fetchSessions)
-      .subscribe();
-
-    return () => {
-      unsubscribe();
-      supabase.removeChannel(channel);
-    };
+    return () => unsubscribe();
   }, [navigation]);
 
   const handlePanicAction = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     try {
-      // Apaga todos os teus sinais ativos
+      // Deleta pulsos criados pelo operador
       await supabase.from('pulses').delete().eq('p_creator_id', nickname);
       navigation.replace('Login');
-    } catch (e) {
-      navigation.replace('Login');
+    } catch (e) { 
+      navigation.replace('Login'); 
     }
   };
 
-  const barWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
-
   return (
     <View style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>ACTIVE_SIGNALS</Text>
-        <View style={[styles.headerLine, { backgroundColor: ALEX_COLOR }]} />
-        <Text style={styles.headerSubtitle}>OP: {nickname.toUpperCase()}</Text>
+        <Text style={styles.headerTitle}>{t.sessions_title}</Text>
+        <Text style={styles.headerSubtitle}>{t.menu_welcome}{nickname.toUpperCase()}</Text>
       </View>
 
       {loading ? (
         <ActivityIndicator style={{ flex: 1 }} color={ALEX_COLOR} />
       ) : (
         <FlatList
+          key="single-column-terminal" // Resolve o Invariant Violation
           data={sessions}
           keyExtractor={(item) => item.pulse_code}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          renderItem={({ item }) => <PulseCard item={item} nickname={nickname} navigation={navigation} />}
+          renderItem={({ item }) => (
+            <SessionLine 
+              item={item} 
+              nickname={nickname} 
+              navigation={navigation} 
+              t={t} 
+              lang={lang} 
+              ALEX_COLOR={ALEX_COLOR} 
+            />
+          )}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>NO_SIGNALS_FOUND</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t.sessions_empty}</Text>}
         />
       )}
 
+      {/* FOOTER */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.newBtn} onPress={() => navigation.navigate('Config', { nickname })}>
-          <Text style={[styles.newBtnText, { color: ALEX_COLOR }]}>+ INITIALIZE_NEW_PULSE</Text>
-        </TouchableOpacity>
+        <View style={styles.navButtons}>
+          <TouchableOpacity style={styles.navBtn} onPress={() => navigation.navigate('Config', { nickname, lang })}>
+            <Text style={[styles.navBtnText, { color: ALEX_COLOR }]}>{t.menu_create}</Text>
+          </TouchableOpacity>
+          <View style={styles.navDivider} />
+          <TouchableOpacity style={styles.navBtn} onPress={() => navigation.navigate('Join', { nickname, lang })}>
+            <Text style={styles.navBtnText}>{t.menu_join}</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.joinBtn} onPress={() => navigation.navigate('Join', { nickname })}>
-          <Text style={styles.joinBtnText}>SYNC_EXISTING_SIGNAL</Text>
-        </TouchableOpacity>
-
+        {/* PANIC MODE SYSTEM */}
         <View style={styles.panicContainer}>
           <Pressable 
             onPressIn={() => Animated.timing(progressAnim, { toValue: 1, duration: 2000, useNativeDriver: false }).start(({finished}) => finished && handlePanicAction())} 
             onPressOut={() => { progressAnim.setValue(0); Animated.timing(progressAnim).stop(); }} 
             style={styles.panicBtn}
           >
-            <Text style={styles.panicText}>HOLD TO EXECUTE PANIC</Text>
+            <Text style={styles.panicText}>[ ! ] PANIC_MODE</Text>
+            
             <View style={styles.panicProgressBg}>
-              <Animated.View style={[styles.panicProgressBar, { width: barWidth }]} />
+              <Animated.View style={[
+                styles.panicProgressBar, 
+                { width: progressAnim.interpolate({inputRange: [0, 1], outputRange: ['0%', '100%']}) }
+              ]} />
             </View>
+            <Text style={styles.panicSubText}>HOLD 2S TO WIPE ALL SESSIONS</Text>
           </Pressable>
         </View>
-        <Text style={styles.backoraLogo}>BY BACKORA</Text>
+        
+        <Text style={styles.footerBrand}>{t.footer}</Text>
       </View>
     </View>
   );
@@ -189,29 +178,41 @@ export default function SessionsScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: { marginTop: 80, alignItems: 'center', marginBottom: 30 },
-  headerTitle: { color: '#FFF', fontSize: 14, letterSpacing: 8, fontWeight: '200' },
-  headerLine: { width: 30, height: 1, marginTop: 10, opacity: 0.5 },
-  headerSubtitle: { color: '#444', fontSize: 8, letterSpacing: 3, marginTop: 12 },
-  list: { paddingHorizontal: 20, paddingBottom: 250 },
-  row: { justifyContent: 'center' },
-  card: { backgroundColor: '#050505', width: (width - 60) / 2, margin: 8, padding: 18, borderWidth: 0.5, borderColor: '#111', alignItems: 'center' },
-  cardCode: { color: '#C9C4C4', fontSize: 14, letterSpacing: 3, fontWeight: '300' },
-  cardHost: { fontSize: 7, letterSpacing: 1, marginTop: 6 },
-  cardDivider: { width: '40%', height: 0.5, backgroundColor: '#111', marginVertical: 14 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center' },
-  cardTime: { color: '#555', fontSize: 9, letterSpacing: 1, marginRight: 6 },
-  statusDot: { width: 3, height: 3, borderRadius: 1.5 },
+  header: { marginTop: 80, paddingHorizontal: 40, marginBottom: 40 },
+  headerTitle: { color: '#FFF', fontSize: 10, letterSpacing: 8, fontWeight: '300', opacity: 0.8 },
+  headerSubtitle: { color: '#333', fontSize: 7, letterSpacing: 3, marginTop: 10 },
+  
+  list: { paddingHorizontal: 40, paddingBottom: 280 },
+  sessionLine: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    paddingVertical: 25,
+    borderBottomWidth: 0.3,
+    borderBottomColor: '#111'
+  },
+  lineLeft: { flexDirection: 'row', alignItems: 'baseline' },
+  pulseCode: { color: '#C9C4C4', fontSize: 18, letterSpacing: 5, fontWeight: '200' },
+  roleTag: { fontSize: 7, letterSpacing: 2, marginLeft: 15 },
+  
+  lineRight: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 4, height: 4, borderRadius: 2, marginLeft: 12 },
+  timeTag: { fontSize: 9, letterSpacing: 2, fontWeight: '300', textAlign: 'right', minWidth: 45 },
+  
+  empty: { color: '#222', textAlign: 'center', marginTop: 100, fontSize: 8, letterSpacing: 5 },
+
   footer: { position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' },
-  newBtn: { marginBottom: 15 },
-  newBtnText: { fontSize: 9, letterSpacing: 3 },
-  joinBtn: { marginBottom: 25 },
-  joinBtnText: { color: '#444', fontSize: 8, letterSpacing: 3 },
-  panicContainer: { width: '100%', alignItems: 'center' },
-  panicBtn: { padding: 10, alignItems: 'center' },
-  panicText: { color: '#800', fontSize: 9, letterSpacing: 5, fontWeight: 'bold' },
-  panicProgressBg: { width: 140, height: 1, backgroundColor: '#111', marginTop: 12 },
-  panicProgressBar: { height: 1, backgroundColor: '#F00' },
-  backoraLogo: { color: '#222', fontSize: 7, letterSpacing: 8, marginTop: 10 },
-  empty: { color: '#222', textAlign: 'center', marginTop: 100, letterSpacing: 5, fontSize: 10 }
+  navButtons: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
+  navBtn: { paddingHorizontal: 25 },
+  navBtnText: { color: '#444', fontSize: 9, letterSpacing: 4, fontWeight: '300' },
+  navDivider: { width: 0.5, height: 12, backgroundColor: '#111' },
+
+  panicContainer: { alignItems: 'center', marginBottom: 20 },
+  panicBtn: { alignItems: 'center', padding: 10 },
+  panicText: { color: '#B00000', fontSize: 10, letterSpacing: 6, fontWeight: '700' },
+  panicSubText: { color: '#222', fontSize: 6, letterSpacing: 2, marginTop: 8, fontWeight: '300' },
+  panicProgressBg: { width: 140, height: 2, backgroundColor: '#0A0000', marginTop: 12 },
+  panicProgressBar: { height: 2, backgroundColor: '#FF0000' },
+  
+  footerBrand: { color: '#111', fontSize: 7, letterSpacing: 12, marginTop: 5 }
 });

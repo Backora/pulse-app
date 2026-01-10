@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { supabase } from '../supabase'; 
+import { translations } from '../translations'; // IMPORTAÇÃO DO TRADUTOR
 
 export default function ConfigPage({ route, navigation }) {
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
+  const lang = params.lang || 'pt'; // HERANÇA DO IDIOMA
 
   const [selectedDuration, setSelectedDuration] = useState('1h');
   const [loading, setLoading] = useState(false);
+  
+  const t = translations[lang] || translations['pt'];
   const ALEX_COLOR = '#C9C4C4';
 
   const handleStartPulse = async () => {
@@ -23,7 +27,6 @@ export default function ConfigPage({ route, navigation }) {
         return res;
       };
       
-      // Monta o código com os traços
       const pulseCode = `${gen(2)}-${gen(2)}-${gen(2)}`; 
       
       // 2. Cálculo do tempo de expiração
@@ -32,7 +35,7 @@ export default function ConfigPage({ route, navigation }) {
       if (selectedDuration === '7d') hours = 168;
       const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
-      // 3. INSERT USANDO A COLUNA CORRETA: p_creator_id
+      // 3. INSERT NO SUPABASE
       const { error } = await supabase
         .from('pulses')
         .insert([
@@ -46,17 +49,18 @@ export default function ConfigPage({ route, navigation }) {
 
       if (error) throw error;
 
-      // 4. SUCESSO -> CHAT
+      // 4. SUCESSO -> CHAT (Passando lang para o Chat herdar também)
       navigation.navigate('Chat', { 
         nickname, 
         pulseCode: pulseCode,
         isAdmin: true,
-        isNew: true 
+        isNew: true,
+        lang: lang 
       });
 
     } catch (error) {
       console.error("ERRO_AO_CRIAR:", error.message);
-      Alert.alert("SYSTEM_FAILURE", "Erro ao gravar no banco: " + error.message);
+      Alert.alert(t.err_title || "SYSTEM_FAILURE", (t.err_msg || "Error") + ": " + error.message);
     } finally {
       setLoading(false);
     }
@@ -65,11 +69,14 @@ export default function ConfigPage({ route, navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.inner}>
+        
+        {/* HEADER TRADUZIDO */}
         <View style={styles.header}>
-          <Text style={styles.headerLabel}>PULSE_CONFIGURATION</Text>
+          <Text style={styles.headerLabel}>{t.menu_config || "PULSE_CONFIGURATION"}</Text>
           <View style={[styles.dot, { backgroundColor: ALEX_COLOR }]} />
         </View>
 
+        {/* SELETOR DE TEMPO */}
         <View style={styles.optionsWrapper}>
           {['1h', '24h', '7d'].map((time) => (
             <TouchableOpacity 
@@ -90,6 +97,7 @@ export default function ConfigPage({ route, navigation }) {
           ))}
         </View>
 
+        {/* BOTÃO DE INICIALIZAÇÃO TRADUZIDO */}
         <TouchableOpacity 
           style={[styles.generateBtn, { opacity: loading ? 0.3 : 1 }]}
           onPress={handleStartPulse}
@@ -98,14 +106,18 @@ export default function ConfigPage({ route, navigation }) {
           {loading ? (
             <ActivityIndicator color={ALEX_COLOR} size="small" />
           ) : (
-            <Text style={[styles.generateText, { color: ALEX_COLOR }]}>INITIALIZE_PULSE</Text>
+            <Text style={[styles.generateText, { color: ALEX_COLOR }]}>
+                {t.create_btn || "INITIALIZE_PULSE"}
+            </Text>
           )}
         </TouchableOpacity>
 
+        {/* BOTÃO VOLTAR TRADUZIDO */}
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>ABORT_MISSION</Text>
+          <Text style={styles.backText}>{t.join_abort || "ABORT_MISSION"}</Text>
         </TouchableOpacity>
 
+        {/* FOOTER */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>BACKORA_OS_v2.6</Text>
         </View>

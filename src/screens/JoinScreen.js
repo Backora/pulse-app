@@ -5,12 +5,17 @@ import {
   Keyboard, TouchableWithoutFeedback 
 } from 'react-native';
 import { supabase } from '../supabase';
+import { translations } from '../translations'; // IMPORTAÇÃO DO TRADUTOR
 
 export default function JoinScreen({ route, navigation }) {
   const params = route.params || {};
   const nickname = params.nickname || 'OPERATOR';
+  const lang = params.lang || 'pt'; // HERANÇA DO IDIOMA
+  
   const [pulseCode, setPulseCode] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const t = translations[lang] || translations['pt'];
   const ALEX_COLOR = '#C9C4C4';
 
   const handleTextChange = (text) => {
@@ -22,8 +27,9 @@ export default function JoinScreen({ route, navigation }) {
   };
 
   const handleJoin = async () => {
+    // Validação de formato traduzida
     if (pulseCode.length < 8) {
-      Alert.alert("INVALID_FORMAT", "O código deve seguir o padrão XX-XX-XX");
+      Alert.alert(t.join_err_format || "INVALID_FORMAT", "XX-XX-XX");
       return;
     }
 
@@ -31,7 +37,7 @@ export default function JoinScreen({ route, navigation }) {
     Keyboard.dismiss();
 
     try {
-      // 1. VERIFICAÇÃO DE SEGURANÇA: O sinal existe? Quem é o dono?
+      // 1. VERIFICAÇÃO DE SEGURANÇA
       const { data: pulse, error: pulseError } = await supabase
         .from('pulses')
         .select('p_creator_id')
@@ -39,19 +45,19 @@ export default function JoinScreen({ route, navigation }) {
         .single();
 
       if (pulseError || !pulse) {
-        Alert.alert("SIGNAL_LOST", "Sinal não encontrado ou expirado.");
+        Alert.alert(t.join_err_lost || "SIGNAL_LOST", t.err_msg || "Sinal não encontrado.");
         setLoading(false);
         return;
       }
 
-      // 2. REGRA 1: Bloquear se for o próprio Host
+      // 2. BLOQUEIO SE FOR O HOST
       if (pulse.p_creator_id.toLowerCase() === nickname.toLowerCase()) {
-        Alert.alert("ACCESS_DENIED", "Já és o HOST deste sinal. Usa a lista de sessões.");
+        Alert.alert(t.err_title || "ACCESS_DENIED", "Host: use logs.");
         setLoading(false);
         return;
       }
 
-      // 3. REGRA 2: Bloquear se já for participante (Joiner)
+      // 3. BLOQUEIO SE JÁ ESTIVER LIGADO
       const { data: alreadyJoined } = await supabase
         .from('pulse_participants')
         .select('*')
@@ -60,12 +66,12 @@ export default function JoinScreen({ route, navigation }) {
         .single();
 
       if (alreadyJoined) {
-        Alert.alert("ALREADY_CONNECTED", "Já tens uma ligação ativa a este sinal.");
+        Alert.alert(t.err_title || "ALREADY_CONNECTED", "Ligação já ativa.");
         setLoading(false);
         return;
       }
 
-      // 4. Se passar nas regras, executa a função de Join do Alex
+      // 4. FUNÇÃO DE JOIN
       const { error: rpcError } = await supabase.rpc('send_join_pulse', { 
         p_user_id: nickname,   
         p_pulse_code: pulseCode 
@@ -73,17 +79,18 @@ export default function JoinScreen({ route, navigation }) {
 
       if (rpcError) throw rpcError;
 
-      // Sucesso: Vai para o chat
+      // Sucesso: Vai para o chat (passando lang)
       navigation.navigate('Chat', { 
         nickname, 
         pulseCode: pulseCode, 
         isAdmin: false, 
-        isNew: false 
+        isNew: false,
+        lang: lang 
       });
 
     } catch (err) {
       console.log("JOIN_ERROR:", err.message);
-      Alert.alert("SYSTEM_FAILURE", "Erro crítico na sincronização de sinal.");
+      Alert.alert(t.err_title || "SYSTEM_FAILURE", t.err_msg || "Erro crítico.");
     } finally {
       setLoading(false);
     }
@@ -95,12 +102,12 @@ export default function JoinScreen({ route, navigation }) {
         <View style={styles.inner}>
           
           <View style={styles.headerBox}>
-            <Text style={styles.operatorLabel}>ID // {nickname.toUpperCase()}</Text>
+            <Text style={styles.operatorLabel}>{t.menu_welcome}{nickname.toUpperCase()}</Text>
             <View style={[styles.statusLine, { backgroundColor: ALEX_COLOR }]} />
           </View>
 
           <View style={styles.centerWrapper}>
-            <Text style={styles.inputLabel}>ENTER_HEX_SIGNAL</Text>
+            <Text style={styles.inputLabel}>{t.join_input_label || "ENTER_HEX_SIGNAL"}</Text>
             
             <TextInput
               style={[styles.input, { color: ALEX_COLOR }]}
@@ -122,17 +129,19 @@ export default function JoinScreen({ route, navigation }) {
               {loading ? (
                 <ActivityIndicator size="small" color={ALEX_COLOR} />
               ) : (
-                <Text style={[styles.actionText, { color: ALEX_COLOR }]}>ESTABLISH_LINK</Text>
+                <Text style={[styles.actionText, { color: ALEX_COLOR }]}>
+                  {t.join_btn || "ESTABLISH_LINK"}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>ABORT_CONNECTION</Text>
+            <Text style={styles.backText}>{t.join_abort || "ABORT_CONNECTION"}</Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>BY BACKORA</Text>
+            <Text style={styles.footerText}>{t.footer}</Text>
           </View>
         </View>
       </View>

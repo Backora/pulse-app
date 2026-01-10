@@ -5,6 +5,7 @@ import {
   Alert, ActivityIndicator 
 } from 'react-native';
 import { supabase } from '../supabase';
+import { translations } from '../translations'; // IMPORTAÇÃO DO TRADUTOR
 import EntryRitual from '../components/EntryRitual';
 
 export default function ChatScreen({ route, navigation }) {
@@ -12,15 +13,15 @@ export default function ChatScreen({ route, navigation }) {
   const nickname = params.nickname || 'OPERATOR';
   const pulseCode = params.pulseCode || '---';
   const isNew = params.isNew || false;
-  
-  // 1. EXTRAIR O isAdmin QUE VEM DA JOIN OU CONFIG
   const isAdmin = params.isAdmin || false; 
+  const lang = params.lang || 'pt'; // HERANÇA DO IDIOMA
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRitual, setShowRitual] = useState(isNew);
   
+  const t = translations[lang] || translations['pt'];
   const ALEX_COLOR = '#C9C4C4';
   const flatListRef = useRef();
 
@@ -60,43 +61,46 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   const handleDeletePulse = async () => {
-    // 2. TRAVA DE SEGURANÇA LÓGICA
     if (!isAdmin) {
-      Alert.alert("ACCESS_DENIED", "Apenas o Host pode destruir este sinal.");
+      Alert.alert(t.err_title || "ACCESS_DENIED", "Apenas o Host pode destruir este sinal.");
       return;
     }
 
-    Alert.alert("CONFIRMAR DESTRUIÇÃO", "Eliminar rastro permanentemente?", [
-      { text: "CANCEL", style: "cancel" },
-      { text: "KILL", style: "destructive", onPress: async () => {
-        setLoading(true);
-        try {
-          await supabase.rpc('delete_pulse', { p_pulse_code: pulseCode });
-          navigation.navigate('Sessions', { nickname });
-        } catch (e) {
-          console.error(e);
-          navigation.navigate('Sessions', { nickname });
-        } finally {
-          setLoading(false);
-        }
-      }}
-    ]);
+    // Alerta de destruição traduzido
+    Alert.alert(
+      t.panic_title || "CONFIRMAR DESTRUIÇÃO", 
+      t.panic_msg || "Eliminar rastro permanentemente?", 
+      [
+        { text: t.panic_abort || "CANCEL", style: "cancel" },
+        { text: "KILL", style: "destructive", onPress: async () => {
+          setLoading(true);
+          try {
+            await supabase.rpc('delete_pulse', { p_pulse_code: pulseCode });
+            navigation.navigate('Sessions', { nickname, lang });
+          } catch (e) {
+            console.error(e);
+            navigation.navigate('Sessions', { nickname, lang });
+          } finally {
+            setLoading(false);
+          }
+        }}
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Sessions', { nickname })}>
+        <TouchableOpacity onPress={() => navigation.navigate('Sessions', { nickname, lang })}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         
         <View style={styles.headerInfo}>
           <Text style={[styles.headerTitle, { color: ALEX_COLOR }]}>{pulseCode}</Text>
-          <Text style={styles.headerSubtitle}>ENCRYPTED_PULSE</Text>
+          <Text style={styles.headerSubtitle}>{t.chat_secure || "SECURE_CHANNEL_ACTIVE"}</Text>
         </View>
 
-        {/* 3. TRAVA VISUAL: SÓ MOSTRA O BOTÃO SE FOR ADMIN */}
         <View style={{ width: 40, alignItems: 'flex-end' }}>
           {isAdmin ? (
             <TouchableOpacity onPress={handleDeletePulse} disabled={loading}>
@@ -137,7 +141,7 @@ export default function ChatScreen({ route, navigation }) {
         <View style={styles.inputArea}>
           <TextInput
             style={[styles.input, { color: ALEX_COLOR }]}
-            placeholder="TYPE_MESSAGE..."
+            placeholder={t.chat_input || "TYPE_MESSAGE..."}
             placeholderTextColor="#444"
             value={newMessage}
             onChangeText={setNewMessage}
